@@ -27,6 +27,12 @@
               <Plus class="w-5 h-5" />
               Nova Carta
             </button>
+            <button 
+              @click="logout"
+              class="bg-gradient-to-r from-gray-500 to-gray-700 text-white px-4 py-2 rounded-xl font-semibold hover:from-gray-600 hover:to-gray-800 transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+              <LogOut class="w-4 h-4" />
+              Sair
+            </button>
           </div>
         </div>
       </div>
@@ -209,7 +215,10 @@
                   </div>
                 </div>
 
-                <button v-if="letter.status === 'unlocked'" class="mt-4 w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all">
+                <button 
+                  v-if="letter.status === 'unlocked'" 
+                  @click="openLetter(letter)"
+                  class="mt-4 w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all">
                   Ler Carta
                 </button>
               </div>
@@ -225,12 +234,66 @@
       </div>
     </div>
 
-    <!-- Modal de Criar Carta (vou criar depois) -->
+    <!-- Modal de Criar Carta -->
     <CreateLetterModal 
   v-if="showCreateLetterModal" 
   @close="showCreateLetterModal = false"
   @submit="handleLetterSubmit"
 />
+  
+  <!-- Modal de Leitura de Carta -->
+  <div v-if="showLetterModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <!-- Header do Modal -->
+      <div class="bg-gradient-to-r from-green-500 to-emerald-500 p-6 text-white">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold">{{ selectedLetter?.title }}</h2>
+            <div class="flex items-center gap-4 mt-2 text-sm opacity-90">
+              <span>{{ selectedLetter?.category }}</span>
+              <span>{{ selectedLetter?.mood }}</span>
+            </div>
+          </div>
+          <button @click="closeLetterModal" class="hover:bg-white hover:bg-opacity-20 p-2 rounded-full transition-all">
+            <X class="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+      
+      <!-- Conteúdo da Carta -->
+      <div class="p-8 overflow-y-auto flex-grow">
+        <div class="prose max-w-none">
+          <div class="mb-6">
+            <p class="text-gray-600"><span class="font-semibold">Criada em:</span> {{ selectedLetter?.createdAt }}</p>
+            <p class="text-gray-600"><span class="font-semibold">Aberta em:</span> {{ selectedLetter?.openDate }}</p>
+          </div>
+          
+          <div class="whitespace-pre-line text-gray-800 leading-relaxed text-lg">
+            {{ selectedLetter?.content }}
+          </div>
+        </div>
+        
+        <!-- Indicador de mídia se existir -->
+        <div v-if="selectedLetter?.hasMedia" class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <div class="flex items-center gap-2 text-blue-700">
+            <Image class="w-5 h-5" />
+            <span class="font-semibold">Esta carta contém mídia</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Footer do Modal -->
+      <div class="bg-gray-50 px-8 py-6 border-t flex justify-end">
+        <button
+          @click="closeLetterModal"
+          class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:from-green-600 hover:to-emerald-600 transition-all"
+        >
+          Fechar Carta
+        </button>
+      </div>
+    </div>
+  </div>
+  
   </div>
 </template>
 
@@ -238,10 +301,12 @@
 import CreateLetterModal from '@/components/CreateLetterModal.vue';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Mail, Plus, Calendar, Lock, Unlock, Heart, Target, MessageCircle, Sparkles, Award, Filter, Clock, Image, TrendingUp } from 'lucide-vue-next';
+import { Mail, Plus, Calendar, Lock, Unlock, Heart, Target, MessageCircle, Sparkles, Award, Filter, Clock, Image, TrendingUp, LogOut, X } from 'lucide-vue-next';
 
 const router = useRouter();
 const showCreateLetterModal = ref(false);
+const showLetterModal = ref(false);
+const selectedLetter = ref(null);
 
 const userName = ref('Maria');
 const isLinkedToPsychologist = ref(false);
@@ -334,8 +399,59 @@ const getCategoryIcon = (categoryId) => {
 
 const handleLetterSubmit = (letterData) => {
   console.log('Nova carta:', letterData);
-  // Aqui você salvará no Firebase
+  
+  // Calcular propriedades necessárias para a nova carta
+  const today = new Date();
+  const createdAt = today.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace(' de ', '/');
+  
+  // Calcular status com base na data de abertura
+  const openDate = new Date(letterData.openDate);
+  const todayWithoutTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const daysLeft = Math.ceil((openDate - todayWithoutTime) / (1000 * 60 * 60 * 24));
+  const status = daysLeft <= 0 ? 'unlocked' : 'locked';
+  
+  // Calcular próxima ID
+  const nextId = letters.value.length > 0 ? Math.max(...letters.value.map(l => l.id)) + 1 : 1;
+  
+  // Criar novo objeto de carta com todas as propriedades necessárias
+  const newLetter = {
+    id: nextId,
+    title: letterData.title,
+    category: letterData.category || 'sem-categoria',
+    createdAt: createdAt,
+    openDate: openDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace(' de ', '/'),
+    status: status,
+    daysLeft: daysLeft > 0 ? daysLeft : 0,
+    mood: letterData.mood,
+    hasMedia: letterData.media && letterData.media.length > 0,
+    content: letterData.content, // adicionar conteúdo da carta
+    sharedWithPsychologist: false
+  };
+  
+  // Adicionar a nova carta ao array
+  letters.value.push(newLetter);
+  
+  // Fechar o modal
   showCreateLetterModal.value = false;
+};
+
+const logout = () => {
+  // Aqui você pode adicionar lógica para limpar o estado de autenticação se necessário
+  router.push({ name: 'selection' });
+};
+
+// Função para abrir uma carta
+const openLetter = (letter) => {
+  if (letter.status === 'unlocked') {
+    selectedLetter.value = letter;
+    showLetterModal.value = true;
+  }
+};
+
+// Função para fechar o modal de carta
+const closeLetterModal = () => {
+  showLetterModal.value = false;
+  selectedLetter.value = null;
 };
 
 </script>
