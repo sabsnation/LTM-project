@@ -233,7 +233,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Brain, Calendar, Users, AlertCircle, TrendingUp, Plus, FileText, MessageCircle, Bell, Search } from 'lucide-vue-next';
 
@@ -245,7 +245,7 @@ const todayAppointments = ref([
   { id: 1, time: '09:00', duration: '50min', patient: 'Maria Santos', type: 'Terapia Cognitiva', status: 'em-andamento', statusText: 'Em andamento' },
   { id: 2, time: '10:00', duration: '50min', patient: 'João Silva', type: 'Primeira Consulta', status: 'agendado', statusText: 'Agendado' },
   { id: 3, time: '14:00', duration: '50min', patient: 'Ana Costa', type: 'Acompanhamento', status: 'agendado', statusText: 'Agendado' },
-  { id: 4, time: '15:00', duration: '50min', patient: 'Pedro Oliveira', type: 'Terapia Familiar', status: 'agendado', statusText: 'Agendado' },
+  { id: 4, time: '15:00', duration: '500min', patient: 'Pedro Oliveira', type: 'Terapia Familiar', status: 'agendado', statusText: 'Agendado' },
   { id: 5, time: '16:00', duration: '50min', patient: 'Carla Mendes', type: 'Sessão de Grupo', status: 'agendado', statusText: 'Agendado' }
 ]);
 
@@ -266,4 +266,9 @@ const handleLogout = () => {
   // Aqui você limparia o token de autenticação do Firebase
   router.push('/');
 };
+
+// Garantir que o cursor normal esteja ativo nesta tela
+onMounted(() => {
+  document.body.classList.remove('selection-screen-body');
+});
 </script>

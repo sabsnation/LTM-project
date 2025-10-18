@@ -1,66 +1,174 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 flex items-center justify-center p-4 relative overflow-hidden">
-    <div class="absolute inset-0 overflow-hidden">
-      <div class="absolute -top-40 -right-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-      <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-      <div class="absolute top-1/2 left-1/2 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-    </div>
+  <div class="selection-screen hide-system-cursor ">
+    <!-- Background fixo ocupando a tela inteira -->
+    <div
+      class="absolute inset-0 bg-cover bg-center"
+      style="background-image: url('https://78.media.tumblr.com/90a10a126d1e3beb56566159799e553d/tumblr_ozo6zbdxOO1vbdodoo1_500.gif');"
+    ></div>
 
-    <div class="max-w-5xl w-full relative z-10">
-      <div class="text-center mb-16">
+    <!-- Overlay escurecido -->
+    <div class="absolute inset-0 bg-black/30"></div>
+
+    <!-- Conteúdo central fixo -->
+    <div class="relative z-10 flex flex-col items-center justify-center w-full min-h-screen transform scale-70 sm:scale-75 md:scale-75 lg:scale-70" style="transform-origin: center;">
+      <div class="text-center mb-10">
         <div class="flex items-center justify-center mb-6">
           <Sparkles class="w-8 h-8 text-yellow-300 mr-3 animate-pulse" />
-          <h1 class="text-6xl font-bold text-white tracking-tight">Letter Matter</h1>
+          <h1 class="text-6xl font-bold text-white tracking-tight font-serif">Letter Matter</h1>
           <Sparkles class="w-8 h-8 text-yellow-300 ml-3 animate-pulse" />
         </div>
-        <p class="text-xl text-purple-100">Sua escrita é a chave da sua cura.</p>
+        <p class="text-xl text-purple-100 font-serif">Sua escrita é a chave da sua cura.</p>
       </div>
-      
-      <div class="grid md:grid-cols-2 gap-8">
-        <router-link
-          to="/login-paciente"
-          class="group bg-white/10 backdrop-blur-lg rounded-3xl p-10 shadow-2xl hover:shadow-purple-500/50 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105 border border-white/20"
-        >
-          <div class="flex flex-col items-center">
-            <div class="bg-gradient-to-br from-cyan-400 to-blue-600 p-8 rounded-full mb-6 shadow-lg group-hover:shadow-cyan-500/50 transition-all duration-500 group-hover:rotate-12">
-              <User class="w-14 h-14 text-white" />
-            </div>
-            <h2 class="text-3xl font-bold text-white mb-4 group-hover:text-cyan-300 transition-colors">Usuário</h2>
-            <p class="text-purple-100 text-center text-lg leading-relaxed">
-              Acesse sua jornada de bem-estar e agende suas consultas com facilidade
-            </p>
-            <div class="mt-6 flex items-center text-cyan-300 font-semibold">
-              <span>Entrar agora</span>
-              <ArrowLeft class="w-5 h-5 ml-2 rotate-180 group-hover:translate-x-2 transition-transform" />
-            </div>
-          </div>
-        </router-link>
 
-        <router-link
-          to="/login-psicologo"
-          class="group bg-white/10 backdrop-blur-lg rounded-3xl p-10 shadow-2xl hover:shadow-pink-500/50 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105 border border-white/20"
+      <!-- Pergaminho e formulário centralizados -->
+      <div class="relative w-full max-w-2xl flex justify-center items-center">
+        <img
+          src="@/assets/pergaminho.png"
+          alt="Pergaminho"
+          class="w-full h-auto object-contain pointer-events-none select-none scale-110"
+        />
+
+        <!-- Formulário sobre o pergaminho -->
+        <div
+          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/4 scale-90"
         >
-          <div class="flex flex-col items-center">
-            <div class="bg-gradient-to-br from-pink-400 to-purple-600 p-8 rounded-full mb-6 shadow-lg group-hover:shadow-pink-500/50 transition-all duration-500 group-hover:rotate-12">
-              <Brain class="w-14 h-14 text-white" />
+          <div class="rounded-xl p-4 bg-transparent">
+            <h3 class="text-lg font-bold text-amber-900 mb-3 text-center font-serif border-b border-amber-800 pb-2">
+              Acesse seu Selo
+            </h3>
+
+            <form @submit.prevent="loginPatient" class="space-y-2">
+              <div>
+                <label
+                  for="email"
+                  class="block text-xs font-medium text-amber-900 mb-1 font-serif"
+                  >Símbolo de Correio</label
+                >
+                <input
+                  id="email"
+                  v-model="email"
+                  type="email"
+                  required
+                  class="w-full px-2 py-1.5 border border-amber-800 rounded-sm focus:ring-1 focus:ring-amber-700 focus:border-amber-700 outline-none text-xs bg-amber-50/90 font-serif"
+                  placeholder="seu@selo.com"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="password"
+                  class="block text-xs font-medium text-amber-900 mb-1 font-serif"
+                  >Senha Secreta</label
+                >
+                <input
+                  id="password"
+                  v-model="password"
+                  type="password"
+                  required
+                  class="w-full px-2 py-1.5 border border-amber-800 rounded-sm focus:ring-1 focus:ring-amber-700 focus:border-amber-700 outline-none text-xs bg-amber-50/90 font-serif"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <button
+                type="submit"
+                class="w-full bg-gradient-to-r from-amber-700 to-amber-900 text-white py-1.5 rounded-sm font-bold hover:from-amber-800 hover:to-amber-950 transition-all shadow text-xs font-serif border border-amber-800"
+              >
+                Selo de Acesso
+              </button>
+            </form>
+
+            <div class="mt-3 text-center">
+              <p class="text-xs text-amber-900 font-serif">Não possui um selo?</p>
+              <button
+                @click="showRegister = true"
+                class="text-amber-800 hover:text-amber-950 font-bold text-xs mt-1 font-serif underline"
+              >
+                Crie seu selo aqui
+              </button>
             </div>
-            <h2 class="text-3xl font-bold text-white mb-4 group-hover:text-pink-300 transition-colors">Psicólogo</h2>
-            <p class="text-purple-100 text-center text-lg leading-relaxed">
-              Portal profissional para gerenciar seus pacientes e consultório
-            </p>
-            <div class="mt-6 flex items-center text-pink-300 font-semibold">
-              <span>Acessar área</span>
-              <ArrowLeft class="w-5 h-5 ml-2 rotate-180 group-hover:translate-x-2 transition-transform" />
+
+            <div class="mt-2 text-center border-t border-amber-800 pt-2">
+              <p class="text-xs text-amber-900 font-serif">É um sábio curador?</p>
+              <router-link
+                to="/login-psicologo"
+                class="text-amber-800 hover:text-amber-950 font-bold text-xs mt-1 inline-block font-serif underline"
+              >
+                Acesso ao pergaminho sábio
+              </router-link>
             </div>
           </div>
-        </router-link>
+        </div>
       </div>
+    </div>
+
+
+
+    <!-- Cursor personalizado -->
+    <div class="pena-cursor">
+      <img src="@/assets/pena.png" alt="Cursor de pena" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { User, Brain, ArrowLeft, Sparkles } from 'lucide-vue-next';
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import { Sparkles } from "lucide-vue-next";
+import { useRouter } from "vue-router";
 
-// MUDANÇA AQUI: Não precisamos mais do defineEmits, pois o router-link cuida da navegação.
+const router = useRouter();
+const email = ref("");
+const password = ref("");
+const showRegister = ref(false);
+
+const loginPatient = () => {
+  router.push("/patient/dashboard");
+};
+
+// anima o cursor de pena
+onMounted(() => {
+  const cursor = document.querySelector(".pena-cursor");
+  const moveCursor = (e) => {
+    cursor.style.left = e.clientX + "px";
+    cursor.style.top = e.clientY + "px";
+  };
+  document.addEventListener("mousemove", moveCursor);
+  onBeforeUnmount(() => {
+    document.removeEventListener("mousemove", moveCursor);
+  });
+});
 </script>
+
+<style scoped>
+.selection-screen {
+  position: fixed; /* ocupa toda a tela */
+  inset: 0;
+  overflow: hidden; /* impede rolagem */
+  height: 100vh;
+  width: 100vw;
+}
+
+/* esconde o cursor apenas nesta view */
+.hide-system-cursor {
+  cursor: none;
+}
+
+/* cursor personalizado */
+.pena-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  z-index: 9999;
+}
+
+.pena-cursor img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.3));
+}
+</style>

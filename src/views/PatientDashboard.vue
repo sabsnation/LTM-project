@@ -299,7 +299,7 @@
 
 <script setup>
 import CreateLetterModal from '@/components/CreateLetterModal.vue';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Mail, Plus, Calendar, Lock, Unlock, Heart, Target, MessageCircle, Sparkles, Award, Filter, Clock, Image, TrendingUp, LogOut, X } from 'lucide-vue-next';
 
@@ -453,5 +453,10 @@ const closeLetterModal = () => {
   showLetterModal.value = false;
   selectedLetter.value = null;
 };
+
+// Garantir que o cursor normal esteja ativo nesta tela
+onMounted(() => {
+  document.body.classList.remove('selection-screen-body');
+});
 
 </script>
