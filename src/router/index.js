@@ -4,6 +4,7 @@ import SelectionScreen from '@/views/SelectionScreen.vue'
 import PsychologistLogin from '@/views/PsychologistLogin.vue'
 import PatientDashboard from '@/views/PatientDashboard.vue'
 import PsychologistDashboard from '@/views/PsychologistDashboard.vue'
+import PsychologistProfile from '@/views/PsychologistProfile.vue'
 import PatientProfile from '@/views/PatientProfile.vue'
 import PatientLetters from '@/views/PatientLetters.vue'
 import KnowledgeTower from '@/views/KnowledgeTower.vue'
@@ -66,6 +67,12 @@ const routes = [
     path: '/psychologist/dashboard',
     name: 'psychologist-dashboard',
     component: PsychologistDashboard,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/psychologist/profile',
+    name: 'psychologist-profile',
+    component: PsychologistProfile,
     meta: { requiresAuth: true }
   }
 ]
