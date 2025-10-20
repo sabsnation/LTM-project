@@ -1,22 +1,22 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div class="bg-amber-50 rounded-sm shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-amber-300 font-serif">
       <!-- Header -->
-      <div class="bg-gradient-to-r from-orange-500 to-rose-500 p-6 text-white">
+      <div class="bg-gradient-to-r from-amber-700 to-amber-900 p-6 text-amber-100">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-2xl font-bold">Nova Carta para o Futuro</h2>
+            <h2 class="text-2xl font-bold">Novo Pergaminho para o Futuro</h2>
             <p class="text-sm opacity-90 mt-1">Etapa {{ step }} de 4</p>
           </div>
-          <button @click="$emit('close')" class="hover:bg-white hover:bg-opacity-20 p-2 rounded-full transition-all">
+          <button @click="$emit('close')" class="hover:bg-amber-700 hover:bg-opacity-20 p-2 rounded-full transition-all">
             <X class="w-6 h-6" />
           </button>
         </div>
         
         <!-- Progress Bar -->
-        <div class="mt-4 bg-white bg-opacity-20 rounded-full h-2 overflow-hidden">
+        <div class="mt-4 bg-amber-900 bg-opacity-20 rounded-sm h-2 overflow-hidden">
           <div 
-            class="bg-white h-full rounded-full transition-all duration-300"
+            class="bg-amber-100 h-full rounded-sm transition-all duration-300"
             :style="{ width: `${(step / 4) * 100}%` }"
           ></div>
         </div>
@@ -27,19 +27,19 @@
         <!-- Step 1: Título e Categoria -->
         <div v-if="step === 1" class="space-y-6">
           <div>
-            <label class="block text-lg font-bold text-gray-800 mb-3">
-              Dê um título para sua carta ✍️
+            <label class="block text-lg font-bold text-amber-900 mb-3">
+              Dê um título para seu pergaminho ✍️
             </label>
             <input
               v-model="letterData.title"
               type="text"
-              placeholder="Ex: Carta de reflexão sobre 2025"
-              class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-lg"
+              placeholder="Ex: Pergaminho de reflexão sobre 2025"
+              class="w-full px-4 py-4 border border-amber-700 rounded-sm focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none text-lg text-amber-900 bg-amber-100"
             />
           </div>
 
           <div>
-            <label class="block text-lg font-bold text-gray-800 mb-4">
+            <label class="block text-lg font-bold text-amber-900 mb-4">
               Escolha uma categoria (opcional)
             </label>
             <div class="grid md:grid-cols-2 gap-4">
@@ -47,18 +47,18 @@
                 v-for="cat in categories"
                 :key="cat.id"
                 @click="letterData.category = cat.id"
-                :class="letterData.category === cat.id ? 'border-orange-500 bg-orange-50 shadow-lg scale-105' : 'border-gray-200 hover:border-orange-300 hover:shadow-md'"
-                class="p-6 rounded-2xl border-2 transition-all text-left"
+                :class="letterData.category === cat.id ? 'border-amber-600 bg-amber-200 shadow-lg scale-105' : 'border-amber-400 hover:border-amber-600 hover:shadow-md'"
+                class="p-6 rounded-sm border-2 transition-all text-left"
               >
                 <div class="flex items-start gap-4">
-                  <div :class="`bg-${cat.color}-100 p-3 rounded-xl`">
-                    <component :is="cat.icon" :class="`w-6 h-6 text-${cat.color}-600`" />
+                  <div :class="`bg-amber-200 p-3 rounded-sm border border-amber-400`">
+                    <component :is="cat.icon" :class="`w-6 h-6 text-amber-700`" />
                   </div>
                   <div class="flex-1">
-                    <h3 class="font-bold text-gray-800 text-lg">{{ cat.name }}</h3>
-                    <p class="text-sm text-gray-600 mt-1">{{ cat.description }}</p>
+                    <h3 class="font-bold text-amber-900 text-lg">{{ cat.name }}</h3>
+                    <p class="text-sm text-amber-800 mt-1">{{ cat.description }}</p>
                   </div>
-                  <div v-if="letterData.category === cat.id" class="bg-orange-500 text-white rounded-full p-1">
+                  <div v-if="letterData.category === cat.id" class="bg-amber-700 text-amber-100 rounded-full p-1 border border-amber-500">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
                     </svg>
@@ -72,8 +72,8 @@
         <!-- Step 2: Humor do Dia -->
         <div v-if="step === 2" class="space-y-6">
           <div class="text-center mb-8">
-            <h3 class="text-2xl font-bold text-gray-800 mb-2">Como você está se sentindo hoje?</h3>
-            <p class="text-gray-600">Escolha o emoji que melhor representa seu humor</p>
+            <h3 class="text-2xl font-bold text-amber-900 mb-2">Como você está se sentindo hoje?</h3>
+            <p class="text-amber-700">Escolha o símbolo que melhor representa seu humor</p>
           </div>
 
           <div class="grid grid-cols-4 gap-4">
@@ -81,18 +81,18 @@
               v-for="mood in moods"
               :key="mood.emoji"
               @click="letterData.mood = mood.emoji"
-              :class="letterData.mood === mood.emoji ? 'border-orange-500 bg-orange-50 shadow-lg scale-110' : 'border-gray-200 hover:border-orange-300'"
-              class="p-6 rounded-2xl border-2 transition-all hover:scale-110"
+              :class="letterData.mood === mood.emoji ? 'border-amber-700 bg-amber-200 shadow-lg scale-110' : 'border-amber-400 hover:border-amber-600'"
+              class="p-6 rounded-sm border-2 transition-all hover:scale-110"
             >
               <div class="text-center">
                 <span class="text-5xl block mb-2">{{ mood.emoji }}</span>
-                <span class="text-sm font-semibold text-gray-700">{{ mood.label }}</span>
+                <span class="text-sm font-semibold text-amber-800">{{ mood.label }}</span>
               </div>
             </button>
           </div>
 
-          <div v-if="letterData.mood" class="mt-6 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-center">
-            <p class="text-green-700 font-semibold">
+          <div v-if="letterData.mood" class="mt-6 p-4 bg-amber-200 border border-amber-400 rounded-sm text-center">
+            <p class="text-amber-800 font-semibold">
               Ótimo! Seu humor foi registrado: {{ letterData.mood }}
             </p>
           </div>
@@ -101,53 +101,52 @@
         <!-- Step 3: Escrever a Carta -->
         <div v-if="step === 3" class="space-y-6">
           <div class="text-center mb-6">
-            <h3 class="text-2xl font-bold text-gray-800 mb-2">Escreva sua carta 💌</h3>
-            <p class="text-gray-600">Compartilhe seus pensamentos, sentimentos e reflexões</p>
+            <h3 class="text-2xl font-bold text-amber-900 mb-2">Escreva seu pergaminho 📜</h3>
+            <p class="text-amber-700">Compartilhe seus pensamentos, sentimentos e reflexões</p>
           </div>
 
           <div class="relative">
             <textarea
               v-model="letterData.content"
-              placeholder="Querido eu do futuro,&#10;&#10;Hoje eu..."
-              class="w-full h-80 px-6 py-6 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none text-lg leading-relaxed"
-              style="font-family: Georgia, serif"
+              placeholder="Caríssimo eu do futuro,&#10;&#10;Nesta data eu..."
+              class="w-full h-80 px-6 py-6 border border-amber-700 rounded-sm focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none resize-none text-lg leading-relaxed text-amber-900 bg-amber-100 font-serif"
             ></textarea>
-            <div class="absolute bottom-4 right-4 text-sm text-gray-400">
+            <div class="absolute bottom-4 right-4 text-sm text-amber-600">
               {{ letterData.content.length }} caracteres
             </div>
           </div>
 
           <!-- Media Upload Options -->
-          <div class="bg-gray-50 rounded-2xl p-6 border-2 border-dashed border-gray-300">
-            <p class="font-semibold text-gray-800 mb-4">Adicionar mídia (opcional)</p>
+          <div class="bg-amber-100 rounded-sm p-6 border-2 border-dashed border-amber-400">
+            <p class="font-semibold text-amber-900 mb-4">Adicionar selos (opcional)</p>
             <div class="flex flex-wrap gap-3">
               <button
                 @click="handleMediaUpload('imagem')"
-                class="flex items-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all"
+                class="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-400 rounded-sm hover:border-amber-600 hover:bg-amber-200 transition-all"
               >
-                <Image class="w-5 h-5 text-blue-600" />
-                <span class="text-sm font-semibold">Foto</span>
+                <Image class="w-5 h-5 text-amber-700" />
+                <span class="text-sm font-semibold text-amber-800">Desenho</span>
               </button>
               <button
                 @click="handleMediaUpload('video')"
-                class="flex items-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all"
+                class="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-400 rounded-sm hover:border-amber-600 hover:bg-amber-200 transition-all"
               >
-                <Video class="w-5 h-5 text-purple-600" />
-                <span class="text-sm font-semibold">Vídeo</span>
+                <Video class="w-5 h-5 text-amber-700" />
+                <span class="text-sm font-semibold text-amber-800">Gravação</span>
               </button>
               <button
                 @click="handleMediaUpload('audio')"
-                class="flex items-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition-all"
+                class="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-400 rounded-sm hover:border-amber-600 hover:bg-amber-200 transition-all"
               >
-                <Mic class="w-5 h-5 text-green-600" />
-                <span class="text-sm font-semibold">Áudio</span>
+                <Mic class="w-5 h-5 text-amber-700" />
+                <span class="text-sm font-semibold text-amber-800">Voz</span>
               </button>
               <button
                 @click="handleMediaUpload('arquivo')"
-                class="flex items-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition-all"
+                class="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-400 rounded-sm hover:border-amber-600 hover:bg-amber-200 transition-all"
               >
-                <Paperclip class="w-5 h-5 text-orange-600" />
-                <span class="text-sm font-semibold">Arquivo</span>
+                <Paperclip class="w-5 h-5 text-amber-700" />
+                <span class="text-sm font-semibold text-amber-800">Documento</span>
               </button>
             </div>
           </div>
@@ -227,12 +226,12 @@
       </div>
 
       <!-- Footer -->
-      <div class="bg-gray-50 px-8 py-6 border-t flex items-center justify-between">
+      <div class="bg-amber-100 px-8 py-6 border-t border-amber-300 flex items-center justify-between">
         <button
           @click="handleBack"
           :disabled="step === 1"
-          :class="step === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-100'"
-          class="px-6 py-3 rounded-xl font-semibold transition-all"
+          :class="step === 1 ? 'bg-amber-300 text-amber-500 cursor-not-allowed' : 'bg-amber-50 border border-amber-400 text-amber-800 hover:bg-amber-200'"
+          class="px-6 py-3 rounded-sm font-semibold transition-all"
         >
           Voltar
         </button>
@@ -240,7 +239,7 @@
         <div class="flex gap-3">
           <button
             @click="$emit('close')"
-            class="px-6 py-3 border-2 border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-100 transition-all"
+            class="px-6 py-3 border border-amber-400 rounded-sm font-semibold text-amber-800 hover:bg-amber-200 transition-all"
           >
             Cancelar
           </button>
@@ -249,8 +248,8 @@
             v-if="step < 4"
             @click="handleNext"
             :disabled="!canProceed"
-            :class="!canProceed ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-orange-500 to-rose-500 text-white hover:from-orange-600 hover:to-rose-600 shadow-lg'"
-            class="px-8 py-3 rounded-xl font-semibold transition-all"
+            :class="!canProceed ? 'bg-amber-300 text-amber-500 cursor-not-allowed' : 'bg-gradient-to-r from-amber-700 to-amber-900 text-amber-100 hover:from-amber-600 hover:to-amber-800 shadow-lg'"
+            class="px-8 py-3 rounded-sm font-semibold transition-all"
           >
             Próximo
           </button>
@@ -259,11 +258,11 @@
             v-else
             @click="handleSubmit"
             :disabled="!letterData.openDate"
-            :class="!letterData.openDate ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg'"
-            class="px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2"
+            :class="!letterData.openDate ? 'bg-amber-300 text-amber-500 cursor-not-allowed' : 'bg-gradient-to-r from-amber-700 to-amber-900 text-amber-100 hover:from-amber-600 hover:to-amber-800 shadow-lg'"
+            class="px-8 py-3 rounded-sm font-semibold transition-all flex items-center gap-2"
           >
             <Send class="w-5 h-5" />
-            Lacrar Carta
+            Lacrar Pergaminho
           </button>
         </div>
       </div>

@@ -6,5 +6,11 @@
 </script>
 
 <style>
-/* nada de cursor aqui */
+body {
+  font-family: "Isenheim", serif;
+}
+
+#app {
+  font-family: "Isenheim", serif;
+}
 </style>

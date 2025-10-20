@@ -1,0 +1,14 @@
+@font-face {
+  font-family: "Isenheim";
+  src: url("./fonts/Isenheim_Regulier.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  font-family: "Isenheim", serif;
+}
+
+#app {
+  font-family: "Isenheim", serif;
+}

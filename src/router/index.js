@@ -4,8 +4,12 @@ import SelectionScreen from '@/views/SelectionScreen.vue'
 import PsychologistLogin from '@/views/PsychologistLogin.vue'
 import PatientDashboard from '@/views/PatientDashboard.vue'
 import PsychologistDashboard from '@/views/PsychologistDashboard.vue'
+import PatientProfile from '@/views/PatientProfile.vue'
+import PatientLetters from '@/views/PatientLetters.vue'
+import KnowledgeTower from '@/views/KnowledgeTower.vue'
+import SageHouse from '@/views/SageHouse.vue'
+import PatientNotifications from '@/views/PatientNotifications.vue' // ⬅️ adicione esta linha
 
-// 1. Defina suas rotas
 const routes = [
   {
     path: '/',
@@ -29,6 +33,36 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/patient/profile',
+    name: 'patient-profile',
+    component: PatientProfile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/patient/letters',
+    name: 'patient-letters',
+    component: PatientLetters,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/patient/knowledge-tower',
+    name: 'knowledge-tower',
+    component: KnowledgeTower,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/patient/sage-house',
+    name: 'sage-house',
+    component: SageHouse,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/patient/notifications', // ⬅️ NOVA ROTA
+    name: 'patient-notifications',
+    component: PatientNotifications,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/psychologist/dashboard',
     name: 'psychologist-dashboard',
     component: PsychologistDashboard,
@@ -36,7 +70,6 @@ const routes = [
   }
 ]
 
-// 2. Crie a instância do roteador
 const router = createRouter({
   history: createWebHistory(),
   routes
