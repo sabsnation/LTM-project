@@ -20,6 +20,62 @@
           Criar Nova Escritura
         </button>
       </div>
+      
+      <!-- Exibição condicional das cartas ou mensagem de carregamento/vazio -->
+      <div v-if="loadingLetters" class="text-center py-12">
+        <p class="text-amber-800 text-lg">Carregando suas escrituras...</p>
+      </div>
+      <div v-else-if="letters.length > 0" class="mb-12">
+        <h2 class="text-2xl font-bold text-amber-900 mb-6">Suas Escrituras</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div 
+            v-for="letter in letters" 
+            :key="letter.id"
+            class="bg-amber-50 rounded-sm shadow-md p-4 border border-amber-300 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="font-bold text-amber-900 text-lg truncate">{{ letter.title }}</h3>
+              <img 
+                :src="getMoodImage(letter.mood)" 
+                :alt="getMoodLabel(letter.mood)"
+                class="w-8 h-8 object-cover ml-2"
+              />
+            </div>
+            
+            <div class="text-sm text-amber-700 mb-2 flex items-center">
+              <img 
+                :src="getCategoryIcon(letter.category)" 
+                :alt="getCategoryLabel(letter.category)"
+                class="w-5 h-5 object-cover mr-1"
+              />
+              <span class="font-semibold">{{ getCategoryLabel(letter.category) }}</span>
+              <span class="mx-2">•</span>
+              <span>{{ formatDate(letter.createdAt) }}</span>
+            </div>
+            
+            <p class="text-amber-800 text-sm line-clamp-3 mb-3">{{ letter.content }}</p>
+            
+            <div class="flex justify-end gap-2">
+              <button 
+                @click="editLetter(letter)"
+                class="text-amber-700 hover:text-amber-900 text-sm font-medium"
+              >
+                Editar
+              </button>
+              <button 
+                @click="deleteLetter(letter.id)"
+                class="text-red-600 hover:text-red-800 text-sm font-medium ml-2"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="text-center py-12">
+        <p class="text-amber-800 text-lg">Você ainda não tem escrituras salvas.</p>
+        <p class="text-amber-600 mt-2">Crie sua primeira escritura usando o botão acima!</p>
+      </div>
 
       <!-- Modal de Criar Carta -->
       <div v-if="showCreateLetterModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -42,6 +98,7 @@
                   type="text" 
                   class="w-full px-4 py-2 border-2 border-amber-300 rounded-sm focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none text-amber-900 bg-amber-50"
                   placeholder="Dê um título à sua escritura..."
+                  required
                 />
               </div>
 
@@ -61,16 +118,21 @@
 
               <div>
                 <label class="block text-amber-800 font-semibold mb-2">Humor</label>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                   <button 
                     v-for="mood in moods"
-                    :key="mood.emoji"
+                    :key="mood.value"
                     type="button"
-                    @click="newLetter.mood = mood.emoji"
-                    :class="newLetter.mood === mood.emoji ? 'ring-2 ring-amber-700 bg-amber-200' : 'bg-amber-200 hover:bg-amber-300'"
-                    class="w-12 h-12 text-2xl rounded-sm border border-amber-400"
+                    @click="newLetter.mood = mood.value"
+                    :class="newLetter.mood === mood.value ? 'ring-2 ring-amber-700 bg-amber-200' : 'bg-amber-200 hover:bg-amber-300'"
+                    class="w-16 h-16 rounded-sm border border-amber-400 flex items-center justify-center overflow-hidden"
+                    :title="mood.label"
                   >
-                    {{ mood.emoji }}
+                    <img 
+                      :src="mood.image" 
+                      :alt="mood.label"
+                      class="w-full h-full object-cover"
+                    />
                   </button>
                 </div>
               </div>
@@ -91,6 +153,7 @@
                   rows="6"
                   class="w-full px-4 py-2 border-2 border-amber-300 rounded-sm focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none text-amber-900 bg-amber-50"
                   placeholder="Escreva sua escritura secreta aqui..."
+                  required
                 ></textarea>
               </div>
 
@@ -114,9 +177,11 @@
             </button>
             <button
               @click="submitLetter"
-              class="px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100 rounded-sm font-semibold hover:from-amber-500 hover:to-amber-700 transition-all border border-amber-500"
+              :disabled="saving"
+              class="px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100 rounded-sm font-semibold hover:from-amber-500 hover:to-amber-700 transition-all border border-amber-500 disabled:opacity-50"
             >
-              Salvar Escritura
+              <span v-if="!saving">Salvar Escritura</span>
+              <span v-else>Salvando...</span>
             </button>
           </div>
         </div>
@@ -126,8 +191,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { LogOut, X, Image as ImageIcon } from 'lucide-vue-next';
+import { getCurrentUser } from '@/firebase/authService';
+import { createLetter, getUserLetters, updateLetter, deleteDocument } from '@/firebase/firestoreService';
+
+// Importar as imagens de humor
+import gatoFeliz from '@/assets/gato feliz.webp';
+import gatoPensativo from '@/assets/gato pensativo.jpeg';
+import gatoComLivro from '@/assets/gato com livro.jpg';
+import gatoTriste from '@/assets/gato triste.jpg';
+import gatoBesta from '@/assets/gato besta.avif';
+import gatoCansado from '@/assets/gato cansado.webp';
+import sinoIcon from '@/assets/sino-removebg-preview.png';
+import cartaIcon from '@/assets/criar_carta-removebg-preview.png';
+import livroIcon from '@/assets/livro-.png';
+import objetivoIcon from '@/assets/livraberto-.png';
+import pergaminhoIcon from '@/assets/pergaminho.png';
 
 const showCreateLetterModal = ref(false);
 const newLetter = ref({
@@ -139,14 +219,124 @@ const newLetter = ref({
   hasMedia: false
 });
 
+const saving = ref(false);
+const loadingLetters = ref(true);
+const letters = ref([]);
+const editingLetterId = ref(null);
+
 const moods = [
-  { emoji: '😊', label: 'Feliz' },
-  { emoji: '😌', label: 'Calmo' },
-  { emoji: '🥰', label: 'Agradecido' },
-  { emoji: '😢', label: 'Triste' },
-  { emoji: '😠', label: 'Bravo' },
-  { emoji: '😴', label: 'Cansado' }
+  { image: gatoFeliz, label: 'Feliz', value: 'feliz' },
+  { image: gatoPensativo, label: 'Calmo', value: 'calmo' },
+  { image: gatoComLivro, label: 'Agradecido', value: 'agradecido' },
+  { image: gatoTriste, label: 'Triste', value: 'triste' },
+  { image: gatoBesta, label: 'Bravo', value: 'bravo' },
+  { image: gatoCansado, label: 'Cansado', value: 'cansado' }
 ];
+
+// Função para formatar data
+const formatDate = (date) => {
+  if (!date) return 'N/A';
+  if (date instanceof Date) {
+    return date.toLocaleDateString('pt-BR');
+  }
+  if (typeof date === 'string') {
+    return new Date(date).toLocaleDateString('pt-BR');
+  }
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate().toLocaleDateString('pt-BR');
+  }
+  return 'N/A';
+};
+
+// Função para carregar as cartas do usuário
+const loadLetters = async () => {
+  loadingLetters.value = true;
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    const userLetters = await getUserLetters(user.uid);
+    letters.value = userLetters;
+    console.log('Cartas carregadas:', userLetters);
+  } catch (error) {
+    console.error('Erro ao carregar cartas:', error);
+    alert('Erro ao carregar cartas: ' + error.message);
+  } finally {
+    loadingLetters.value = false;
+  }
+};
+
+// Função para obter o caminho da imagem do humor
+const getMoodImage = (moodValue) => {
+  const mood = moods.find(m => m.value === moodValue);
+  return mood ? mood.image : gatoPensativo; // Imagem padrão
+};
+
+// Função para obter o rótulo do humor
+const getMoodLabel = (moodValue) => {
+  const mood = moods.find(m => m.value === moodValue);
+  return mood ? mood.label : 'Desconhecido';
+};
+
+// Função para obter o ícone da categoria
+const getCategoryIcon = (category) => {
+  switch(category) {
+    case 'gratidao':
+      return sinoIcon;
+    case 'desabafo':
+      return cartaIcon;
+    case 'objetivos':
+      return objetivoIcon;
+    case 'reflexao':
+      return livroIcon;
+    case 'sem-categoria':
+    default:
+      return pergaminhoIcon;
+  }
+};
+
+// Função para obter o rótulo da categoria
+const getCategoryLabel = (category) => {
+  switch(category) {
+    case 'gratidao':
+      return 'Gratidão';
+    case 'desabafo':
+      return 'Desabafo';
+    case 'objetivos':
+      return 'Objetivos';
+    case 'reflexao':
+      return 'Reflexão';
+    case 'sem-categoria':
+    default:
+      return 'Sem Categoria';
+  }
+};
+
+// Função para editar carta
+const editLetter = (letter) => {
+  newLetter.value = { ...letter };
+  editingLetterId.value = letter.id;
+  showCreateLetterModal.value = true;
+};
+
+// Função para excluir carta
+const deleteLetter = async (letterId) => {
+  if (!confirm('Tem certeza que deseja excluir esta escritura?')) {
+    return;
+  }
+  
+  try {
+    await deleteDocument('letters', letterId);
+    // Atualizar a lista de cartas
+    await loadLetters();
+    alert('Escritura excluída com sucesso!');
+  } catch (error) {
+    console.error('Erro ao excluir carta:', error);
+    alert('Erro ao excluir escritura: ' + error.message);
+  }
+};
 
 const closeCreateLetterModal = () => {
   showCreateLetterModal.value = false;
@@ -159,13 +349,75 @@ const closeCreateLetterModal = () => {
     content: '',
     hasMedia: false
   };
+  editingLetterId.value = null;
 };
 
-const submitLetter = () => {
-  // Aqui você pode adicionar a lógica para salvar a carta
-  console.log('Nova carta:', newLetter.value);
+const submitLetter = async () => {
+  if (!newLetter.value.title || !newLetter.value.content) {
+    alert('Por favor, preencha o título e o conteúdo da carta.');
+    return;
+  }
   
-  // Por enquanto, apenas fechamos o modal
-  closeCreateLetterModal();
+  saving.value = true;
+  
+  try {
+    // Obter usuário atual
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    if (editingLetterId.value) {
+      // Atualizar carta existente
+      await updateLetter(editingLetterId.value, {
+        title: newLetter.value.title,
+        category: newLetter.value.category,
+        mood: newLetter.value.mood,
+        openDate: newLetter.value.openDate,
+        content: newLetter.value.content,
+        hasMedia: newLetter.value.hasMedia
+      });
+      
+      console.log('Carta atualizada com sucesso!');
+      alert('Escritura atualizada com sucesso!');
+    } else {
+      // Criar nova carta
+      const letterData = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ID único
+        author_id: user.uid,
+        title: newLetter.value.title,
+        category: newLetter.value.category,
+        mood: newLetter.value.mood,
+        openDate: newLetter.value.openDate,
+        content: newLetter.value.content,
+        hasMedia: newLetter.value.hasMedia,
+        createdAt: new Date(),
+        status: 'private' // Pode ser 'private', 'shared', etc.
+      };
+      
+      console.log('Salvando carta:', letterData);
+      
+      // Salvar carta no Firestore
+      await createLetter(letterData);
+      
+      console.log('Carta salva com sucesso!');
+      alert('Carta salva com sucesso!');
+    }
+    
+    // Fechar modal e resetar formulário
+    closeCreateLetterModal();
+    
+    // Atualizar a lista de cartas
+    await loadLetters();
+  } catch (error) {
+    console.error('Erro ao salvar carta:', error);
+    alert('Erro ao salvar carta: ' + error.message);
+  } finally {
+    saving.value = false;
+  }
 };
+// Carregar cartas ao montar o componente
+onMounted(() => {
+  loadLetters();
+});
 </script>

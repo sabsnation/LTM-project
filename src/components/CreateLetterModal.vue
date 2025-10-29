@@ -80,20 +80,29 @@
             <button
               v-for="mood in moods"
               :key="mood.emoji"
-              @click="letterData.mood = mood.emoji"
-              :class="letterData.mood === mood.emoji ? 'border-amber-700 bg-amber-200 shadow-lg scale-110' : 'border-amber-400 hover:border-amber-600'"
-              class="p-6 rounded-sm border-2 transition-all hover:scale-110"
-            >
+              @click="letterData.mood = mood.id"
+              :class="letterData.mood === mood.id ? 'border-amber-700 bg-amber-200 shadow-lg scale-110' : 'border-amber-400 hover:border-amber-600'"
+              class="p-6 rounded-sm border-2 transition-all hover:scale-110">
               <div class="text-center">
-                <span class="text-5xl block mb-2">{{ mood.emoji }}</span>
+                    <img 
+                          :src="mood.img" 
+                          :alt="mood.label"
+                          class="w-16 h-16 mx-auto mb-2 object-contain"
+                        />
                 <span class="text-sm font-semibold text-amber-800">{{ mood.label }}</span>
               </div>
             </button>
           </div>
 
           <div v-if="letterData.mood" class="mt-6 p-4 bg-amber-200 border border-amber-400 rounded-sm text-center">
-            <p class="text-amber-800 font-semibold">
-              Ótimo! Seu humor foi registrado: {{ letterData.mood }}
+            <p class="text-amber-800 font-semibold flex items-center justify-center gap-2">
+              Ótimo! Seu humor foi registrado: 
+              <img 
+                v-if="selectedMoodImage" 
+                :src="selectedMoodImage" 
+                alt="humor selecionado" 
+                class="w-8 h-8 inline-block object-contain" 
+              />
             </p>
           </div>
         </div>
@@ -286,24 +295,22 @@ const letterData = ref({
   media: []
 });
 
-const categories = [
-  { id: 'gratidao', name: 'Gratidão', icon: Heart, color: 'pink', description: 'Agradeça pelas coisas boas' },
-  { id: 'desabafo', name: 'Desabafo', icon: MessageCircle, color: 'blue', description: 'Expresse seus sentimentos' },
-  { id: 'objetivos', name: 'Objetivos', icon: Target, color: 'green', description: 'Defina suas metas' },
-  { id: 'reflexao', name: 'Reflexão', icon: Sparkles, color: 'purple', description: 'Reflita sobre sua vida' },
-  { id: 'sem-categoria', name: 'Livre', icon: Mail, color: 'gray', description: 'Escreva livremente' }
-];
+const selectedMoodImage = computed(() => {
+  const mood = moods.find(m => m.id === letterData.value.mood);
+  return mood ? mood.img : null;
+});
+
 
 const moods = [
-  { emoji: '😊', label: 'Feliz' },
-  { emoji: '😌', label: 'Calmo' },
-  { emoji: '😢', label: 'Triste' },
-  { emoji: '😰', label: 'Ansioso' },
-  { emoji: '😴', label: 'Cansado' },
-  { emoji: '😡', label: 'Irritado' },
-  { emoji: '🥰', label: 'Apaixonado' },
-  { emoji: '🤔', label: 'Pensativo' }
+  { id: 'feliz', label: 'Feliz', img: '@/assets/gato feliz.webp'},
+  { id: 'calmo', label: 'Cansado', img: '@/assets/gato cansado.webp' },
+  { id: 'triste', label: 'Triste', img: '@/assets/gato triste.jpg' },
+  { id: 'ansioso', label: 'Ansioso', img: '@/assets/gato existencial.jpeg' },
+  { id: 'irritado', label: 'Normal', img: '@/assets/gato besta.avif' },
+  { id: 'apaixonado', label: 'Pensativo', img: '@/assets/gato pensativo.jpeg' },
+  { id: 'pensativo', label: 'Raiva', img: '@/assets/gatodesconfiado.jpeg' }
 ];
+
 
 const minDate = computed(() => {
   const tomorrow = new Date();

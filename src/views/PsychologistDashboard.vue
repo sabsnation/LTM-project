@@ -56,25 +56,56 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { LogOut } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
+import { logoutUser } from '@/firebase/authService';
+import { getCurrentUserProfile } from '@/firebase/userProfileService';
 
 // CORREÇÃO: Importar as imagens corretamente
 import livroFechadoImg from '@/assets/livro-.png';
 import livroAbertoImg from '@/assets/livraberto-.png';
 
 const router = useRouter();
-const userName = ref("Sábio Mentor");
-
+const userName = ref("Carregando...");
 const livroAberto = ref(false);
+let authUnsubscribe = null;
+
+onMounted(async () => {
+  // Load psychologist profile
+  try {
+    const profile = await getCurrentUserProfile();
+    if (profile) {
+      userName.value = profile.name || profile.email.split('@')[0];
+    } else {
+      // If no profile, redirect to login
+      router.push('/login-psicologo');
+    }
+  } catch (error) {
+    console.error('Error loading profile:', error);
+    router.push('/login-psicologo');
+  }
+});
+
+onUnmounted(() => {
+  if (authUnsubscribe) {
+    authUnsubscribe();
+  }
+});
 
 const toggleLivro = () => {
   livroAberto.value = !livroAberto.value;
 };
 
-const handleLogout = () => {
-  router.push('/');
+const handleLogout = async () => {
+  try {
+    console.log('Realizando logout do psicólogo...');
+    await logoutUser();
+    console.log('Logout do psicólogo realizado com sucesso');
+    router.push('/');
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
 };
 </script>
 

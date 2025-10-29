@@ -86,6 +86,15 @@
               >
                 Crie seu selo aqui
               </button>
+              
+              <div class="mt-2">
+                <button
+                  @click="loginWithGoogleSelection"
+                  class="w-full bg-red-500 text-white py-1.5 rounded-sm font-bold hover:bg-red-600 transition-all shadow text-xs font-serif border border-red-600"
+                >
+                  Continuar com Google
+                </button>
+              </div>
             </div>
 
             <div class="mt-2 text-center border-t border-amber-800 pt-2">
@@ -96,6 +105,15 @@
               >
                 Acesso ao pergaminho sábio
               </router-link>
+              
+              <div class="mt-2">
+                <router-link
+                  to="/firebase-test"
+                  class="text-amber-700 hover:text-amber-900 font-bold text-xs underline"
+                >
+                  Teste de Conexão Firebase
+                </router-link>
+              </div>
             </div>
           </div>
         </div>
@@ -104,6 +122,13 @@
 
 
 
+    <!-- Modal de Registro -->
+    <RegisterModal 
+      v-if="showRegister"
+      @close="showRegister = false"
+      @register-success="handleRegisterSuccess"
+      @switch-to-login="showRegister = false"
+    />
     <!-- Cursor personalizado -->
     <div class="pena-cursor">
       <img src="@/assets/pena.png" alt="Cursor de pena" />
@@ -115,14 +140,54 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { Sparkles } from "lucide-vue-next";
 import { useRouter } from "vue-router";
+import RegisterModal from '@/components/RegisterModal.vue';
+import { loginUser, loginWithGoogle } from '@/firebase/authService';
 
 const router = useRouter();
 const email = ref("");
 const password = ref("");
 const showRegister = ref(false);
 
-const loginPatient = () => {
-  router.push("/patient/dashboard");
+const loginPatient = async () => {
+  if (!email.value || !password.value) {
+    alert('Por favor, preencha todos os campos.');
+    return;
+  }
+  
+  try {
+    const user = await loginUser(email.value, password.value);
+    console.log('Usuário logado com sucesso no SelectionScreen:', user);
+    router.push("/patient/dashboard");
+  } catch (err) {
+    console.error('Login error no SelectionScreen:', err);
+    let errorMessage = 'Erro no login. Por favor, tente novamente.';
+    
+    if (err.code === 'auth/user-not-found') {
+      errorMessage = 'Nenhuma conta encontrada com este e-mail.';
+    } else if (err.code === 'auth/wrong-password') {
+      errorMessage = 'Senha incorreta.';
+    } else {
+      errorMessage = 'Erro no login. Por favor, tente novamente. Detalhes: ' + err.message;
+    }
+    
+    alert(errorMessage);
+  }
+};
+
+const loginWithGoogleSelection = async () => {
+  try {
+    const user = await loginWithGoogle();
+    console.log('Usuário logado com Google com sucesso:', user);
+    router.push("/patient/dashboard");
+  } catch (err) {
+    console.error('Google login error no SelectionScreen:', err);
+    alert('Erro no login com Google. Por favor, tente novamente. Detalhes: ' + err.message);
+  }
+};
+
+const handleRegisterSuccess = () => {
+  showRegister = false;
+  // Adiciona feedback visual ou mensagem de sucesso aqui se desejar
 };
 
 // anima o cursor de pena

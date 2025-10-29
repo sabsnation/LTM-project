@@ -77,6 +77,10 @@
             </div>
           </div>
 
+          <div v-if="error" class="error-message text-red-500 text-sm">
+            {{ error }}
+          </div>
+
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-2 gap-2 sm:gap-0">
             <label class="flex items-center cursor-pointer group">
               <input v-model="remember" type="checkbox" class="rounded text-amber-600 mr-2 sm:mr-3 w-4 h-4 sm:w-5 sm:h-5 border-amber-500" />
@@ -91,9 +95,19 @@
 
           <button
             @click="handleLogin"
-            class="w-full bg-gradient-to-r from-amber-700 to-amber-900 text-amber-100 py-3 sm:py-4 rounded-sm font-bold text-base sm:text-lg hover:from-amber-600 hover:to-amber-800 transition-all shadow-lg hover:shadow-amber-500/50 transform hover:-translate-y-0.5 border border-amber-600"
+            :disabled="loading"
+            class="w-full bg-gradient-to-r from-amber-700 to-amber-900 text-amber-100 py-3 sm:py-4 rounded-sm font-bold text-base sm:text-lg hover:from-amber-600 hover:to-amber-800 transition-all shadow-lg hover:shadow-amber-500/50 transform hover:-translate-y-0.5 border border-amber-600 disabled:opacity-50"
           >
-            Selo de Acesso ao Sábio
+            <span v-if="!loading">Selo de Acesso ao Sábio</span>
+            <span v-else>Processando...</span>
+          </button>
+
+          <button
+            @click="handleGoogleLogin"
+            :disabled="loading"
+            class="w-full bg-red-500 text-white py-2.5 sm:py-3.5 rounded-sm font-bold text-base sm:text-lg hover:bg-red-600 transition-all shadow-lg transform hover:-translate-y-0.5 border border-red-600 disabled:opacity-50 mt-2"
+          >
+            Continuar com Google
           </button>
         </div>
 
@@ -114,16 +128,82 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Mail, Lock } from 'lucide-vue-next'
+import { 
+  loginUser, 
+  loginWithGoogle as googleLogin 
+} from '@/firebase/authService';
+import { createTherapist } from '@/firebase/firestoreService';
 
 const crp = ref('')
 const email = ref('')
 const password = ref('')
 const remember = ref(false)
+const loading = ref(false)
+const error = ref('')
 const router = useRouter()
 
-const handleLogin = () => {
-  console.log('Login do psicólogo:', { crp: crp.value, email: email.value })
-  router.push('/psychologist/dashboard')
+const handleLogin = async () => {
+  if (!email.value || !password.value) {
+    error.value = 'Por favor, preencha todos os campos.';
+    return;
+  }
+
+  loading.value = true;
+  error.value = '';
+
+  try {
+    const user = await loginUser(email.value, password.value);
+    console.log('Psicólogo logado com sucesso:', user);
+    router.push('/psychologist/dashboard');
+  } catch (err) {
+    console.error('Login error:', err);
+    if (err.code === 'auth/user-not-found') {
+      error.value = 'Nenhuma conta encontrada com este e-mail.';
+    } else if (err.code === 'auth/wrong-password') {
+      error.value = 'Senha incorreta.';
+    } else {
+      error.value = 'Erro no login. Por favor, tente novamente. Detalhes: ' + err.message;
+    }
+  } finally {
+    loading.value = false;
+  }
+}
+
+const handleGoogleLogin = async () => {
+  loading.value = true;
+  error.value = '';
+
+  try {
+    const user = await googleLogin();
+    
+    // Create therapist profile in Firestore if doesn't exist
+    try {
+      await createTherapist({
+        id: user.uid,
+        email: user.email,
+        name: user.displayName || user.email.split('@')[0],
+        crp: crp.value || 'Não informado',
+        status_verification: 'pending', // Default status
+        code_vinculo: generateCodeVinculo(), // Generate a unique code for linking
+        createdAt: new Date()
+      });
+    } catch (e) {
+      // Therapist profile may already exist, that's fine
+      console.log('Therapist profile may already exist:', e.message);
+    }
+    
+    router.push('/psychologist/dashboard');
+  } catch (err) {
+    console.error('Google login error:', err);
+    error.value = 'Erro no login com Google. Por favor, tente novamente.';
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Generate a unique code for linking patients to therapists
+const generateCodeVinculo = () => {
+  return Math.random().toString(36).substring(2, 10).toUpperCase();
 }
 
 onMounted(() => {

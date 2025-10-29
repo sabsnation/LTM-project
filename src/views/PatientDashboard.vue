@@ -111,14 +111,22 @@
         <!-- Sino de notificações -->
         <router-link
           to="/patient/notifications"
-          class="absolute -top-4 -right-8 transition-transform duration-300"
+          class="absolute -top-6 -right-6 transition-transform duration-300"
         >
-          <img
-            src="@/assets/sino-removebg-preview.png"
-            alt="Sino"
-            class="w-12 h-12"
-            :class="{ 'animate-bell': hasNotifications }"
-          />
+          <div class="relative">
+            <img
+              src="@/assets/sino-removebg-preview.png"
+              alt="Sino"
+              class="w-14 h-14"
+              :class="{ 'animate-bell': hasNotifications }"
+            />
+            <div 
+              v-if="hasNotifications"
+              class="absolute -top-1 -right-1 w-6 h-6 bg-amber-700 rounded-full flex items-center justify-center text-amber-100 text-xs font-bold border-2 border-amber-400 shadow-md"
+            >
+              {{ notificationCount }}
+            </div>
+          </div>
         </router-link>
       </div>
 
@@ -143,23 +151,124 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { LogOut } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
+import { logoutUser } from '@/firebase/authService';
+import { getCurrentUserProfile } from '@/firebase/userProfileService';
+import { getUserLetters } from '@/firebase/firestoreService';
+import { getCurrentUser } from '@/firebase/authService';
+import { hasPendingInvitations } from '@/firebase/invitationService';
 
 const hasNotifications = ref(false);
+const notificationCount = ref(0);
 const router = useRouter();
+const userName = ref("Carregando...");
+let authUnsubscribe = null;
 
-onMounted(() => {
-  setTimeout(() => {
-    hasNotifications.value = true;
-  }, 3000);
+// Check for unlocked letters (letters with openDate in the past or no openDate)
+const checkUnlockedLetters = async () => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return 0;
+    
+    const letters = await getUserLetters(user.uid);
+    const today = new Date();
+    
+    // Count letters that are ready to be opened (either no openDate or openDate in the past)
+    const unlockedLetters = letters.filter(letter => {
+      if (!letter.openDate) return true; // No open date means it's immediately available
+      
+      // Compare dates only (ignore time)
+      const letterDate = new Date(letter.openDate);
+      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const letterDateOnly = new Date(letterDate.getFullYear(), letterDate.getMonth(), letterDate.getDate());
+      
+      return letterDateOnly <= todayDate;
+    });
+    
+    return unlockedLetters.length;
+  } catch (error) {
+    console.error('Error checking unlocked letters:', error);
+    return 0;
+  }
+};
+
+// Check for psychologist link requests
+const checkPsychologistLinkRequests = async () => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return 0;
+
+    // Check for pending invitations
+    const hasInvites = await hasPendingInvitations(user.uid);
+    return hasInvites ? 1 : 0; // Return 1 if there are pending invitations, 0 otherwise
+    
+  } catch (error) {
+    console.error('Error checking psychologist link requests:', error);
+    return 0;
+  }
+};
+
+// Update notification count based on unlocked letters and psychologist link requests
+const updateNotifications = async () => {
+  try {
+    const unlockedLettersCount = await checkUnlockedLetters();
+    const psychologistRequestsCount = await checkPsychologistLinkRequests();
+    
+    const totalNotifications = unlockedLettersCount + psychologistRequestsCount;
+    notificationCount.value = totalNotifications;
+    hasNotifications.value = totalNotifications > 0;
+    
+    console.log(`Notificações atualizadas - Cartas desbloqueadas: ${unlockedLettersCount}, Solicitações de psicólogo: ${psychologistRequestsCount}, Total: ${totalNotifications}`);
+  } catch (error) {
+    console.error('Error updating notifications:', error);
+    notificationCount.value = 0;
+    hasNotifications.value = false;
+  }
+};
+
+onMounted(async () => {
+  // Load user profile
+  try {
+    console.log('Carregando perfil do usuário...');
+    const profile = await getCurrentUserProfile();
+    console.log('Perfil do usuário carregado:', profile);
+    if (profile) {
+      userName.value = profile.name || profile.email.split('@')[0];
+      console.log('Nome do usuário definido como:', userName.value);
+      
+      // Check for notifications after loading profile
+      await updateNotifications();
+    } else {
+      console.log('Nenhum perfil encontrado, redirecionando para login');
+      // If no profile, redirect to login
+      router.push('/login-paciente');
+    }
+  } catch (error) {
+    console.error('Error loading profile:', error);
+    router.push('/login-paciente');
+  }
 });
 
-const userName = ref("Sabsy Brazz");
+// Update notifications when the component mounts
+onMounted(updateNotifications);
 
-const handleLogout = () => {
-  router.push('/');
+onUnmounted(() => {
+  if (authUnsubscribe) {
+    authUnsubscribe();
+  }
+});
+
+const handleLogout = async () => {
+  try {
+    console.log('Realizando logout...');
+    await logoutUser();
+    console.log('Logout realizado com sucesso');
+    router.push('/');
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
 };
 </script>
 
