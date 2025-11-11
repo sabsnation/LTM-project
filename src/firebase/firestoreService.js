@@ -27,24 +27,33 @@ const lettersCollection = 'letters'
 // User operations
 const createUser = async (userData) => {
   try {
-    console.log('Tentando criar usuário no Firestore:', userData)
-    const userRef = doc(db, usersCollection, userData.id)
+    console.log('Tentando criar usuário no Firestore:', userData.id)
+    
+    // Criar cópia dos dados para evitar problemas de imutabilidade
+    let userDataCopy = { ...userData }
+    
+    let userRef = doc(db, usersCollection, userDataCopy.id)
     
     // Verificar se o usuário já existe
-    const userSnapshot = await getDoc(userRef)
+    let userSnapshot = await getDoc(userRef)
     if (userSnapshot.exists()) {
       console.log('Usuário já existe no Firestore:', userSnapshot.data())
       return userRef
     }
     
-    await setDoc(userRef, {
-      ...userData,
+    // Criar objeto para salvar no Firestore
+    let dataToSave = {
+      ...userDataCopy,
       createdAt: serverTimestamp()
-    })
+    }
+    
+    console.log('Salvando dados do usuário:', dataToSave)
+    await setDoc(userRef, dataToSave)
     console.log('Usuário criado com sucesso no Firestore')
     return userRef
   } catch (error) {
     console.error('Erro ao criar usuário no Firestore:', error)
+    console.error('Erro stack:', error.stack)
     throw error
   }
 }

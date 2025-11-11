@@ -20,9 +20,12 @@ const getGoogleProvider = () => {
 
 const registerUser = async (email, password) => {
   try {
+    console.log('Chamando Firebase Auth para registrar:', { email, password: '***' })
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    console.log('Usuário criado com sucesso no Firebase Auth:', userCredential.user.uid)
     return userCredential.user
   } catch (error) {
+    console.error('Erro no serviço de registro:', error)
     throw error
   }
 }

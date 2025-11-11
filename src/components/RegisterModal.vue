@@ -134,6 +134,13 @@ const handleRegister = async () => {
     error.value = 'Por favor, preencha todos os campos.'
     return
   }
+
+  // Validação mais rigorosa de email
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+  if (!emailRegex.test(email.value.trim())) {
+    error.value = 'Por favor, insira um email válido (ex: usuario@dominio.com).'
+    return
+  }
   
   if (password.value !== confirmPassword.value) {
     error.value = 'As senhas não coincidem.'
@@ -150,16 +157,21 @@ const handleRegister = async () => {
     return
   }
   
+  // Debug: exibir o email antes de enviar para o Firebase
+  console.log('Email sendo enviado para registro:', email.value.trim())
+  console.log('Formato do email parece válido:', emailRegex.test(email.value.trim()))
+  
   loading.value = true
   error.value = ''
   
   try {
     // Registrar usuário no Firebase Auth
-    const user = await registerUser(email.value, password.value)
-    console.log('Usuário registrado com sucesso:', user)
+    console.log('Tentando registrar usuário com email:', email.value.trim())
+    const user = await registerUser(email.value.trim(), password.value)
+    console.log('Usuário registrado com sucesso:', user.uid)
     
     // Criar perfil do usuário no Firestore
-    await createUser({
+    let userData = {
       id: user.uid,
       email: user.email,
       name: name.value,
@@ -169,15 +181,24 @@ const handleRegister = async () => {
       bio: 'Usuário em jornada de autodescoberta e cura. Engajado no processo terapêutico e comprometido com o crescimento pessoal.',
       progress: 0,
       createdAt: new Date()
-    })
+    }
+    
+    await createUser(userData)
     console.log('Perfil do usuário criado com sucesso no Firestore')
     
     // Emitir evento de sucesso e fechar modal
     emit('register-success')
   } catch (err) {
-    console.error('Registration error:', err)
+    console.error('Registration error completo:', {
+      message: err.message,
+      code: err.code,
+      stack: err.stack,
+      email: email.value.trim()
+    })
     if (err.code === 'auth/email-already-in-use') {
       error.value = 'Este e-mail já está registrado.'
+    } else if (err.code === 'auth/invalid-email') {
+      error.value = 'Formato de email inválido. Por favor, verifique e tente novamente.'
     } else {
       error.value = 'Erro ao criar conta. Por favor, tente novamente. Detalhes: ' + err.message
     }
@@ -199,7 +220,7 @@ const handleGoogleRegister = async () => {
       await createUser({
         id: user.uid,
         email: user.email,
-        name: user.displayName || user.email.split('@')[0],
+        name: user.displayName || user.email?.split('@')[0] || 'Usuário sem nome',
         age: null, // Idade não disponível no login Google
         role: 'user', // Papel padrão para usuários comuns
         therapist_linked_id: null,
@@ -217,7 +238,12 @@ const handleGoogleRegister = async () => {
     emit('register-success')
   } catch (err) {
     console.error('Google registration error:', err)
-    error.value = 'Erro ao registrar com Google. Por favor, tente novamente. Detalhes: ' + err.message
+    // Tratamento específico para o erro de popup bloqueado
+    if (err.code === 'auth/popup-blocked') {
+      error.value = 'O popup de login do Google foi bloqueado. Por favor, permita popups para este site e tente novamente.'
+    } else {
+      error.value = 'Erro ao registrar com Google. Por favor, tente novamente. Detalhes: ' + err.message
+    }
   } finally {
     loading.value = false
   }

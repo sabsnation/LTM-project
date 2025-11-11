@@ -99,14 +99,15 @@ const submitForm = async () => {
     } else {
       user = await registerUser(email.value, password.value)
       // Create user profile in Firestore
-      await createUser({
+      const userData = {
         id: user.uid,
         email: user.email,
         name: user.email.split('@')[0], // Use part of email as default name
         role: props.isPatient ? 'user' : 'therapist', // For patient users, default to 'user' until linked with therapist
         therapist_linked_id: null,
         createdAt: new Date()
-      })
+      }
+      await createUser(userData)
     }
     
     // Redirect based on user type
@@ -164,7 +165,12 @@ const loginWithGoogle = async () => {
     }
   } catch (err) {
     console.error('Google login error:', err)
-    error.value = 'Google login failed. Please try again.'
+    // Tratamento específico para o erro de popup bloqueado
+    if (err.code === 'auth/popup-blocked') {
+      error.value = 'O popup de login do Google foi bloqueado. Por favor, permita popups para este site e tente novamente.'
+    } else {
+      error.value = 'Google login failed. Please try again.'
+    }
   } finally {
     loading.value = false
   }

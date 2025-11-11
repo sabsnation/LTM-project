@@ -9,7 +9,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
 // Initialize Firebase
-import './firebase/config'
+import './firebase/init'
 
 // Gerenciamento global do cursor
 router.beforeEach((to, from, next) => {

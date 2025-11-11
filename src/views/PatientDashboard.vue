@@ -18,42 +18,7 @@
     <!-- Vilinha principal -->
     <main class="relative w-full h-full z-10">
    <!-- SVG da Trilha que conecta as construções -->
-<svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 5;">
-  <!-- Trilha completa ondulada da Torre até Casa do Sábio -->
-  <path 
-    d="M 200 610 Q 300 620, 400 615 Q 500 610, 600 625 Q 700 640, 800 635 Q 900 630, 1000 640 Q 1100 650, 1200 640 Q 1300 630, 1380 635"
-    stroke="#A0826D" 
-    stroke-width="35" 
-    fill="none" 
-    opacity="0.5"
-    stroke-linecap="round"
-  />
-  <!-- Contorno escuro da trilha -->
-  <path 
-    d="M 200 610 Q 300 620, 400 615 Q 500 610, 600 625 Q 700 640, 800 635 Q 900 630, 1000 640 Q 1100 650, 1200 640 Q 1300 630, 1380 635"
-    stroke="#6B5744" 
-    stroke-width="40" 
-    fill="none" 
-    opacity="0.3"
-    stroke-linecap="round"
-  />
 
-  <!-- Detalhes decorativos: pequenas pedras/pegadas ao longo da trilha -->
-  <g opacity="0.4" fill="#5C4A3A">
-    <circle cx="300" cy="620" r="4"/>
-    <circle cx="350" cy="617" r="3"/>
-    <circle cx="450" cy="612" r="4"/>
-    <circle cx="550" cy="616" r="3"/>
-    <circle cx="650" cy="630" r="4"/>
-    <circle cx="750" cy="638" r="3"/>
-    <circle cx="850" cy="633" r="4"/>
-    <circle cx="950" cy="632" r="3"/>
-    <circle cx="1050" cy="643" r="4"/>
-    <circle cx="1150" cy="647" r="3"/>
-    <circle cx="1250" cy="638" r="4"/>
-    <circle cx="1320" cy="633" r="3"/>
-  </g>
-</svg>
 
 <!-- Labels das construções -->
 <div class="absolute bottom-16 left-24 text-center" style="width: 192px;">

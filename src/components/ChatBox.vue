@@ -78,26 +78,26 @@ const messagesContainer = ref(null);
 const formatTime = (message) => {
   if (!message) return '';
   
-  // Try to get the timestamp from either createdAt or timestamp field
-  const timestamp = message.createdAt || message.timestamp;
+  // Get the timestamp from the message
+  const timestamp = message.timestamp;
   
   if (!timestamp) return '';
   
-  // If it's a Firebase server timestamp (object), extract the date
-  // Otherwise use the string representation
+  // Create a date object from the timestamp
   let date;
-  if (typeof timestamp === 'object' && timestamp !== null) {
-    // Handle Firebase server timestamp format
+  if (typeof timestamp === 'number') {
+    // If it's a number (timestamp in milliseconds)
+    date = new Date(timestamp);
+  } else if (typeof timestamp === 'object' && timestamp !== null) {
+    // Handle possible Firebase server timestamp format
     if (timestamp.toDate) {
       date = timestamp.toDate();
     } else {
       // If it's an object but not a Firebase timestamp, try to create date from the object
       date = new Date();
     }
-  } else if (typeof timestamp === 'string') {
-    date = new Date(timestamp);
   } else {
-    // If it's a number (timestamp in milliseconds)
+    // If it's a string
     date = new Date(timestamp);
   }
   
@@ -143,7 +143,6 @@ const sendMessage = async () => {
       text: newMessage.value.trim(),
       userId: currentUser.value.uid,
       userName: profile?.name || profile?.email?.split('@')[0] || 'Anônimo',
-      timestamp: Date.now() // This will be replaced by Firebase server timestamp
     };
     
     console.log('Dados da mensagem:', messageData);

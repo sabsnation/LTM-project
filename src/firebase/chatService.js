@@ -16,10 +16,12 @@ const sendChatMessage = async (messageData) => {
   try {
     console.log("Tentando enviar mensagem:", messageData);
 
+    // Criar objeto da mensagem com timestamp do servidor
     const messageToSend = {
-      ...messageData,
-      timestamp: Date.now(), // usar timestamp local (mais estável para ordenação)
-      serverTime: serverTimestamp(), // referência do servidor (opcional)
+      text: messageData.text || "",
+      userId: messageData.userId || "desconhecido",
+      userName: messageData.userName || "Anônimo",
+      timestamp: serverTimestamp(), // Usar timestamp do servidor para consistência
     };
 
     console.log("Dados preparados para envio:", messageToSend);
@@ -52,12 +54,23 @@ const subscribeToChat = (callback) => {
       snapshot.forEach((child) => {
         const data = child.val();
 
+        // Processar o timestamp do servidor corretamente
+        let timestampValue = 0;
+        if (data.timestamp && typeof data.timestamp === 'object' && data.timestamp.hasOwnProperty('.sv')) {
+          // É um timestamp do servidor, converter para timestamp local
+          timestampValue = Date.now();
+        } else if (typeof data.timestamp === 'number') {
+          timestampValue = data.timestamp;
+        } else {
+          timestampValue = Date.now();
+        }
+
         messages.push({
           id: child.key,
           text: data.text || "",
           userId: data.userId || "desconhecido",
           userName: data.userName || "Anônimo",
-          timestamp: data.timestamp || 0,
+          timestamp: timestampValue,
         });
       });
 
