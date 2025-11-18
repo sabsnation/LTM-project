@@ -1,0 +1,176 @@
+<template>
+  <div class="library-container">
+    <!-- Fundo desfocado -->
+    <div class="blur-background" v-if="showBackground"></div>
+    
+    <!-- Primeira imagem - Pergaminho do SPAM -->
+    <div 
+      v-if="showPergaminho" 
+      class="imagem-pergaminho animate-bounce" 
+      @click="showCarta"
+      :class="{ bounce: showPergaminho }"
+    >
+      <img src="@/assets/pergaminho do spam.png" alt="Pergaminho do SPAM" class="w-full h-full object-contain">
+    </div>
+    
+    <!-- Segunda imagem - Carta Aberta SPAM com mensagem -->
+    <div 
+      v-if="showCartaAberta" 
+      class="imagem-carta-aberta"
+      :class="{ 'opacity-0': !showCartaAberta, 'opacity-100': showCartaAberta }"
+    >
+      <div class="carta-content">
+        <h2 class="mensagem-titulo">Olá, {{ userName }}.</h2>
+        <p class="mensagem-conteudo">
+          Seja muito bem-vindo à Biblioteca da Vila.<br>
+          Como és novo entre nós, permita-me contar-te uma história...<br><br>
+          
+          Houve um tempo em que nossas prateleiras eram cheias de vida — livros, memórias, poesias e sonhos repousavam aqui. Mas um terrível incêndio devastou tudo. As chamas levaram nossas palavras, e por um longo período reinou o silêncio.<br><br>
+          
+          Contudo, os moradores decidiram unir-se em um propósito: reconstruir a Biblioteca com suas próprias histórias. Cada relato, cada lembrança e cada verso agora ajudam a reacender as chamas da imaginação — não mais as do fogo destruidor, mas as do renascimento.<br><br>
+          
+          Agora, é tua vez, viajante.<br>
+          Sente-te, pega tua pena e escreve.<br>
+          Tua história também merece viver entre estas páginas.
+        </p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'LibraryWelcome',
+  props: {
+    userName: {
+      type: String,
+      default: 'Visitante'
+    }
+  },
+  data() {
+    return {
+      showPergaminho: true,
+      showCartaAberta: false,
+      showBackground: true
+    }
+  },
+  methods: {
+    showCarta() {
+      this.showPergaminho = false;
+      // Pequeno delay para garantir a transição suave
+      setTimeout(() => {
+        this.showCartaAberta = true;
+      }, 300);
+    }
+  }
+}
+</script>
+
+<style scoped>
+.library-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.blur-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  z-index: 10;
+}
+
+.imagem-pergaminho {
+  position: relative;
+  width: 400px;
+  height: 300px;
+  cursor: pointer;
+  z-index: 20;
+  transition: transform 0.3s ease;
+}
+
+.imagem-pergaminho:hover {
+  transform: scale(1.05);
+}
+
+.bounce {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  40% {
+    transform: translateY(-10px) rotate(-2deg);
+  }
+  60% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+.imagem-carta-aberta {
+  position: relative;
+  width: 900px;
+  height: 800px;
+  background: url('@/assets/cartaabertaspam.png') no-repeat center center;
+  background-size: contain;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.carta-content {
+  position: absolute;
+  top: 25%;
+  left: 18%;
+  right: 18%;
+  bottom: 25%;
+  padding: 15px 30px;
+  overflow-y: auto;
+  text-align: justify;
+  color: #4b2e12;
+  font-family: 'Georgia', serif;
+  line-height: 1.5;
+  font-size: 0.85rem;
+}
+
+.mensagem-titulo {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #5a3d29;
+  text-align: center;
+}
+
+.mensagem-conteudo {
+  color: #5a3d29;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.mensagem-titulo {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #5a3d29;
+}
+
+.mensagem-conteudo {
+  color: #5a3d29;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+</style>

@@ -46,9 +46,9 @@
         <button
           @click="sendMessage"
           :disabled="!currentUser || !newMessage.trim()"
-          class="bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100 px-4 py-2 rounded-r disabled:opacity-50 hover:from-amber-500 hover:to-amber-700 transition-all"
+          class="bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100 px-3 py-1.5 rounded-r disabled:opacity-50 hover:from-amber-500 hover:to-amber-700 transition-all"
         >
-          <Send class="w-4 h-4" />
+          <Send class="w-3.5 h-3.5" />
         </button>
       </div>
       <div v-if="!currentUser" class="text-xs text-amber-700 mt-1 text-center">

@@ -33,7 +33,7 @@
           class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/4 scale-90"
         >
           <div class="rounded-xl p-4 bg-transparent">
-            <h3 class="text-lg font-bold text-amber-900 mb-3 text-center font-serif border-b border-amber-800 pb-2">
+            <h3 class="text-xl font-bold text-amber-900 mb-3 text-center font-serif border-b border-amber-800 pb-2">
               Acesse seu Selo
             </h3>
 
@@ -41,7 +41,7 @@
               <div>
                 <label
                   for="email"
-                  class="block text-xs font-medium text-amber-900 mb-1 font-serif"
+                  class="block text-sm font-medium text-amber-900 mb-1 font-serif"
                   >Símbolo de Correio</label
                 >
                 <input
@@ -49,7 +49,7 @@
                   v-model="email"
                   type="email"
                   required
-                  class="w-full px-2 py-1.5 border border-amber-800 rounded-sm focus:ring-1 focus:ring-amber-700 focus:border-amber-700 outline-none text-xs bg-amber-50/90 font-serif"
+                  class="w-full px-2 py-1.5 border border-amber-800 rounded-sm focus:ring-1 focus:ring-amber-700 focus:border-amber-700 outline-none text-sm bg-amber-50/90 font-serif"
                   placeholder="seu@selo.com"
                 />
               </div>
@@ -57,7 +57,7 @@
               <div>
                 <label
                   for="password"
-                  class="block text-xs font-medium text-amber-900 mb-1 font-serif"
+                  class="block text-sm font-medium text-amber-900 mb-1 font-serif"
                   >Senha Secreta</label
                 >
                 <input
@@ -65,24 +65,24 @@
                   v-model="password"
                   type="password"
                   required
-                  class="w-full px-2 py-1.5 border border-amber-800 rounded-sm focus:ring-1 focus:ring-amber-700 focus:border-amber-700 outline-none text-xs bg-amber-50/90 font-serif"
+                  class="w-full px-2 py-1.5 border border-amber-800 rounded-sm focus:ring-1 focus:ring-amber-700 focus:border-amber-700 outline-none text-sm bg-amber-50/90 font-serif"
                   placeholder="••••••••"
                 />
               </div>
 
               <button
                 type="submit"
-                class="w-full bg-gradient-to-r from-amber-700 to-amber-900 text-white py-1.5 rounded-sm font-bold hover:from-amber-800 hover:to-amber-950 transition-all shadow text-xs font-serif border border-amber-800"
+                class="w-full bg-gradient-to-r from-amber-700 to-amber-900 text-white py-1.5 rounded-sm font-bold hover:from-amber-800 hover:to-amber-950 transition-all shadow text-sm font-serif border border-amber-800"
               >
                 Selo de Acesso
               </button>
             </form>
 
             <div class="mt-3 text-center">
-              <p class="text-xs text-amber-900 font-serif">Não possui um selo?</p>
+              <p class="text-sm text-amber-900 font-serif">Não possui um selo?</p>
               <button
-                @click="showRegister = true"
-                class="text-amber-800 hover:text-amber-950 font-bold text-xs mt-1 font-serif underline"
+                @click="showRegister.value = true"
+                class="text-amber-800 hover:text-amber-950 font-bold text-sm mt-1 font-serif underline"
               >
                 Crie seu selo aqui
               </button>
@@ -90,7 +90,7 @@
               <div class="mt-2">
                 <button
                   @click="loginWithGoogleSelection"
-                  class="w-full bg-red-500 text-white py-1.5 rounded-sm font-bold hover:bg-red-600 transition-all shadow text-xs font-serif border border-red-600"
+                  class="w-full bg-red-500 text-white py-1.5 rounded-sm font-bold hover:bg-red-600 transition-all shadow text-sm font-serif border border-red-600"
                 >
                   Continuar com Google
                 </button>
@@ -98,22 +98,13 @@
             </div>
 
             <div class="mt-2 text-center border-t border-amber-800 pt-2">
-              <p class="text-xs text-amber-900 font-serif">É um sábio curador?</p>
+              <p class="text-sm text-amber-900 font-serif">É um sábio curador?</p>
               <router-link
                 to="/login-psicologo"
-                class="text-amber-800 hover:text-amber-950 font-bold text-xs mt-1 inline-block font-serif underline"
+                class="text-amber-800 hover:text-amber-950 font-bold text-sm mt-1 inline-block font-serif underline"
               >
                 Acesso ao pergaminho sábio
               </router-link>
-              
-              <div class="mt-2">
-                <router-link
-                  to="/firebase-test"
-                  class="text-amber-700 hover:text-amber-900 font-bold text-xs underline"
-                >
-                  Teste de Conexão Firebase
-                </router-link>
-              </div>
             </div>
           </div>
         </div>
@@ -125,9 +116,9 @@
     <!-- Modal de Registro -->
     <RegisterModal 
       v-if="showRegister"
-      @close="showRegister = false"
+      @close="showRegister.value = false"
       @register-success="handleRegisterSuccess"
-      @switch-to-login="showRegister = false"
+      @switch-to-login="showRegister.value = false"
     />
     <!-- Cursor personalizado -->
     <div class="pena-cursor">
@@ -186,7 +177,7 @@ const loginWithGoogleSelection = async () => {
 };
 
 const handleRegisterSuccess = () => {
-  showRegister = false;
+  showRegister.value = false;
   // Adiciona feedback visual ou mensagem de sucesso aqui se desejar
 };
 

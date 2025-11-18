@@ -8,9 +8,11 @@ import PsychologistDashboard from '@/views/PsychologistDashboard.vue'
 import PsychologistProfile from '@/views/PsychologistProfile.vue'
 import PatientProfile from '@/views/PatientProfile.vue'
 import PatientLetters from '@/views/PatientLetters.vue'
+import ViewLetter from '@/views/ViewLetter.vue'
 import KnowledgeTower from '@/views/KnowledgeTower.vue'
 import SageHouse from '@/views/SageHouse.vue'
 import PatientNotifications from '@/views/PatientNotifications.vue' // ⬅️ adicione esta linha
+import VillageLibrary from '@/views/VillageLibrary.vue'
 import FirebaseTest from '@/views/FirebaseTest.vue'
 
 const routes = [
@@ -53,6 +55,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/patient/letters/:id',
+    name: 'view-letter',
+    component: ViewLetter,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/patient/knowledge-tower',
     name: 'knowledge-tower',
     component: KnowledgeTower,
@@ -62,6 +70,12 @@ const routes = [
     path: '/patient/sage-house',
     name: 'sage-house',
     component: SageHouse,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/patient/village-library',
+    name: 'village-library',
+    component: VillageLibrary,
     meta: { requiresAuth: true }
   },
   {

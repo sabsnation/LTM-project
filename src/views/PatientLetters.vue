@@ -31,7 +31,7 @@
           <div 
             v-for="letter in letters" 
             :key="letter.id"
-            class="bg-amber-50 rounded-sm shadow-md p-4 border border-amber-300 hover:shadow-lg transition-shadow"
+            class="bg-amber-50 rounded-sm shadow-md p-4 border border-amber-300 hover:shadow-lg transition-shadow relative"
           >
             <div class="flex justify-between items-start mb-2">
               <h3 class="font-bold text-amber-900 text-lg truncate">{{ letter.title }}</h3>
@@ -53,21 +53,34 @@
               <span>{{ formatDate(letter.createdAt) }}</span>
             </div>
             
-            <p class="text-amber-800 text-sm line-clamp-3 mb-3">{{ letter.content }}</p>
+            <!-- Conteúdo da carta bloqueada -->
+            <div v-if="isLetterLocked(letter)" class="relative">
+              <div class="opacity-40">
+                <p class="text-amber-800 text-sm line-clamp-3 mb-3">{{ letter.content }}</p>
+              </div>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <img 
+                  :src="seloIcon" 
+                  alt="Selo de Bloqueio"
+                  class="w-44 h-44 object-contain opacity-80 cursor-pointer"
+                  @click="showSeloModal = true"
+                />
+                <p class="text-amber-600 text-sm font-semibold text-center mt-2">Desbloqueio em: {{ formatUnlockDate(letter.openDate) }}</p>
+              </div>
+            </div>
             
-            <div class="flex justify-end gap-2">
-              <button 
-                @click="editLetter(letter)"
-                class="text-amber-700 hover:text-amber-900 text-sm font-medium"
-              >
-                Editar
-              </button>
-              <button 
-                @click="deleteLetter(letter.id)"
-                class="text-red-600 hover:text-red-800 text-sm font-medium ml-2"
-              >
-                Excluir
-              </button>
+            <!-- Conteúdo da carta desbloqueada -->
+            <div v-else class="relative z-10">
+              <p class="text-amber-800 text-sm line-clamp-3 mb-3">{{ letter.content }}</p>
+              
+              <div class="flex justify-end gap-2">
+                <button 
+                  @click="viewLetter(letter.id)"
+                  class="text-amber-700 hover:text-amber-900 text-sm font-medium"
+                >
+                  Acessar
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -188,13 +201,34 @@
       </div>
     </div>
   </div>
+  
+  <!-- Modal do Selo -->
+  <div v-if="showSeloModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4" @click="closeSeloModal">
+    <div class="bg-amber-100 rounded-lg shadow-2xl p-8 max-w-md w-full flex flex-col items-center border-4 border-amber-500" @click.stop>
+      <img 
+        :src="seloIcon" 
+        alt="Selo LetterMatter"
+        class="w-64 h-64 object-contain mx-auto mb-6"
+      />
+      <h3 class="text-2xl font-bold text-amber-900 mb-4 text-center">Selo LetterMatter</h3>
+      <button
+        @click="closeSeloModal"
+        class="mt-4 px-6 py-2 bg-amber-700 text-amber-100 rounded-sm hover:bg-amber-800 transition-colors border border-amber-500"
+      >
+        Fechar
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { LogOut, X, Image as ImageIcon } from 'lucide-vue-next';
 import { getCurrentUser } from '@/firebase/authService';
 import { createLetter, getUserLetters, updateLetter, deleteDocument } from '@/firebase/firestoreService';
+
+const router = useRouter();
 
 // Importar as imagens de humor
 import gatoFeliz from '@/assets/gato feliz.webp';
@@ -208,6 +242,7 @@ import cartaIcon from '@/assets/criar_carta-removebg-preview.png';
 import livroIcon from '@/assets/livro-.png';
 import objetivoIcon from '@/assets/livraberto-.png';
 import pergaminhoIcon from '@/assets/pergaminho.png';
+import seloIcon from '@/assets/selo-ltm.png';
 
 const showCreateLetterModal = ref(false);
 const newLetter = ref({
@@ -314,11 +349,46 @@ const getCategoryLabel = (category) => {
   }
 };
 
+// Função para verificar se a carta está bloqueada
+const isLetterLocked = (letter) => {
+  if (!letter.openDate) {
+    return false; // Se não houver data de abertura, a carta não está bloqueada
+  }
+
+  const openDate = new Date(letter.openDate);
+  const today = new Date();
+  // Comparar apenas as datas (ignorar hora)
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const letterDate = new Date(openDate.getFullYear(), openDate.getMonth(), openDate.getDate());
+
+  return letterDate > todayDate;
+};
+
+// Função para formatar a data de desbloqueio
+const formatUnlockDate = (date) => {
+  if (!date) return 'N/A';
+  if (typeof date === 'string') {
+    // Verificar se é uma string de data
+    return new Date(date).toLocaleDateString('pt-BR');
+  } else if (date && typeof date.toDate === 'function') {
+    // Se for um objeto Firebase Timestamp
+    return date.toDate().toLocaleDateString('pt-BR');
+  } else if (date instanceof Date) {
+    return date.toLocaleDateString('pt-BR');
+  }
+  return 'N/A';
+};
+
 // Função para editar carta
 const editLetter = (letter) => {
   newLetter.value = { ...letter };
   editingLetterId.value = letter.id;
   showCreateLetterModal.value = true;
+};
+
+// Função para visualizar carta
+const viewLetter = (letterId) => {
+  router.push(`/patient/letters/${letterId}`);
 };
 
 // Função para excluir carta
@@ -338,6 +408,9 @@ const deleteLetter = async (letterId) => {
   }
 };
 
+// Ref para modal do selo
+const showSeloModal = ref(false);
+
 const closeCreateLetterModal = () => {
   showCreateLetterModal.value = false;
   // Reset do formulário
@@ -350,6 +423,10 @@ const closeCreateLetterModal = () => {
     hasMedia: false
   };
   editingLetterId.value = null;
+};
+
+const closeSeloModal = () => {
+  showSeloModal.value = false;
 };
 
 const submitLetter = async () => {
@@ -382,20 +459,28 @@ const submitLetter = async () => {
       alert('Escritura atualizada com sucesso!');
     } else {
       // Criar nova carta
+      // Obter o usuário novamente para garantir que o token esteja atualizado
+      const currentUser = await getCurrentUser();
+      if (!currentUser || !currentUser.uid) {
+        throw new Error('Usuário não autenticado corretamente no momento da operação');
+      }
+      
+      // Normalizar os dados da carta
       const letterData = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ID único
-        author_id: user.uid,
-        title: newLetter.value.title,
-        category: newLetter.value.category,
-        mood: newLetter.value.mood,
-        openDate: newLetter.value.openDate,
-        content: newLetter.value.content,
-        hasMedia: newLetter.value.hasMedia,
-        createdAt: new Date(),
-        status: 'private' // Pode ser 'private', 'shared', etc.
+        author_id: currentUser.uid,
+        therapist_id: null,
+        title: newLetter.value.title?.trim() || '',  // Garantir string válida
+        category: newLetter.value.category || 'sem-categoria',
+        mood: newLetter.value.mood || '😊',
+        openDate: newLetter.value.openDate ? new Date(newLetter.value.openDate).toISOString() : null, // Converter para ISO se existir
+        content: newLetter.value.content?.trim() || '',  // Garantir string válida
+        hasMedia: Boolean(newLetter.value.hasMedia),  // Garantir booleano
+        status: 'private'
       };
       
-      console.log('Salvando carta:', letterData);
+      console.log('Dados da carta antes de salvar (normalizados):', letterData);
+      console.log('UID do usuário autenticado no momento da operação:', currentUser.uid);
+      console.log('Dados completos do usuário:', { uid: currentUser.uid, email: currentUser.email });
       
       // Salvar carta no Firestore
       await createLetter(letterData);

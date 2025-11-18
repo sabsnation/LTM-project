@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Regras para a coleção de usuários
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Regras para a coleção de terapeutas
+    match /therapists/{therapistId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == therapistId;
+    }
+    
+    // Regras para a coleção de cartas
+    match /letters/{letterId} {
+      // Permitir leitura apenas para o autor da carta
+      allow read: if request.auth != null && request.auth.uid == resource.data.author_id;
+      // Permitir criação: o autor deve ser o usuário autenticado
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.author_id;
+      // Permitir atualização: o autor deve ser o usuário autenticado (verificando o documento existente)
+      allow update: if request.auth != null && request.auth.uid == resource.data.author_id;
+      // Permitir exclusão apenas para o autor da carta
+      allow delete: if request.auth != null && request.auth.uid == resource.data.author_id;
+    }
+    
+    // Convites só podem ser acessados pelo paciente ou terapeuta envolvidos
+    match /invitations/{invitationId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.data.patientId || 
+         request.auth.uid == resource.data.therapistId);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.therapistId;
+    }
+    
+    // Regras para a coleção de escritas na biblioteca
+    match /library_writings/{writingId} {
+      // Permitir leitura apenas para o autor da escrita
+      allow read: if request.auth != null && request.auth.uid == resource.data.author_id;
+      // Permitir criação: o autor deve ser o usuário autenticado
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.author_id;
+      // Permitir atualização: o autor deve ser o usuário autenticado
+      allow update: if request.auth != null && request.auth.uid == resource.data.author_id;
+      // Permitir exclusão apenas para o autor da escrita
+      allow delete: if request.auth != null && request.auth.uid == resource.data.author_id;
+    }
+  }
+}

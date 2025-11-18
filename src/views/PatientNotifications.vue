@@ -72,6 +72,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import { useRouter } from 'vue-router';
 import { getCurrentUser } from '@/firebase/authService';
 import { getCurrentUserProfile } from '@/firebase/userProfileService';
 import { getUserLetters } from '@/firebase/firestoreService';
@@ -80,6 +81,7 @@ import cartaIcon from '@/assets/criar_carta-removebg-preview.png';
 import sinoIcon from '@/assets/sino-removebg-preview.png';
 import livroIcon from '@/assets/livro-.png';
 
+const router = useRouter();
 const notifications = ref([]);
 
 // Function to get appropriate icon based on notification type
@@ -172,8 +174,8 @@ const formatDate = (date) => {
 // Function to open a letter
 const openLetter = (letterId) => {
   console.log(`Opening letter with ID: ${letterId}`);
-  // In a real implementation, this would navigate to the letter viewing page
-  alert(`Acessando carta com ID: ${letterId}`);
+  // Navigate to the letter viewing page
+  router.push(`/patient/letters/${letterId}`);
 };
 
 // Function to accept psychologist invite
