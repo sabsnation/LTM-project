@@ -30,20 +30,13 @@
     >
       <p class="text-2xl font-bold text-amber-100 mb-3 drop-shadow-lg">nenhum sábio reside aqui.</p>
       <p class="text-lg text-amber-200 drop-shadow-md">Para acessar os recursos da Casa do Sábio, você precisa estar vinculado a um psicólogo.</p>
-      <button
-        @click="showLinkModal = true"
-        class="mt-4 px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100 rounded-sm font-bold hover:from-amber-500 hover:to-amber-700 transition-all border border-amber-500"
-      >
-        Vincular-se a um Sábio
-      </button>
     </div>
     
     <!-- Conteúdo exibido quando o usuário tem vinculação com um psicólogo -->
     <main 
-      v-else
       class="absolute right-8 top-1/2 transform -translate-y-1/2 z-20 max-w-md w-full"
     >
-      <div class="mb-6">
+      <div v-if="hasPsychologist" class="mb-6">
         <h3 class="text-2xl font-bold text-amber-800 mb-2">Sábio Associado</h3>
         <div class="bg-amber-100/70 border border-amber-300 rounded-lg p-4">
           <p class="text-lg font-semibold text-amber-900">{{ therapistInfo.name }}</p>
@@ -69,6 +62,18 @@
       </div>
     </main>
     
+    <!-- Botão para vincular-se a um sábio, visível independentemente do estado de vínculo -->
+    <div 
+      class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20"
+    >
+      <button
+        @click="showLinkModal = true"
+        class="px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100 rounded-sm font-bold hover:from-amber-500 hover:to-amber-700 transition-all border border-amber-500"
+      >
+        {{ hasPsychologist ? 'Alterar Sábio Associado' : 'Vincular-se a um Sábio' }}
+      </button>
+    </div>
+    
     <!-- Modal para vincular ao sábio -->
     <div v-if="showLinkModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <LinkToTherapistModal @close="showLinkModal = false" />
@@ -80,10 +85,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { ArrowLeft } from 'lucide-vue-next';
-import { getCurrentUserProfile } from '@/firebase/userProfileService';
-import { getTherapistById } from '@/firebase/firestoreService';
+import { getCurrentUserProfile, getTherapistById } from '@/firebase/userProfileService';
 import LinkToTherapistModal from '@/components/LinkToTherapistModal.vue';
 
 // Verifica se o usuário tem vinculação com um psicólogo
@@ -91,24 +95,50 @@ const hasPsychologist = ref(false);
 const showLinkModal = ref(false);
 const therapistInfo = ref({});
 
+// Observar mudanças na variável hasPsychologist para depuração
+watch(hasPsychologist, (newValue, oldValue) => {
+  console.log('hasPsychologist mudou de', oldValue, 'para', newValue);
+});
+
 onMounted(async () => {
   try {
+    console.log('Carregando perfil do usuário na Casa do Sábio...');
     const profile = await getCurrentUserProfile();
+    console.log('Perfil do usuário:', profile);
+    
     if (profile && profile.therapist_linked_id) {
+      console.log('Usuário tem vínculo com terapeuta ID:', profile.therapist_linked_id);
       hasPsychologist.value = true;
+      console.log('Valor de hasPsychologist após definir como true:', hasPsychologist.value);
       
       // Carregar informações do psicólogo vinculado
       const therapist = await getTherapistById(profile.therapist_linked_id);
+      console.log('Dados do terapeuta:', therapist);
+      
       if (therapist) {
         therapistInfo.value = {
           name: therapist.name || 'Sábio não identificado',
           crp: therapist.crp || 'CRP não informado',
           specialties: therapist.specialties || []
         };
+        console.log('Informações do terapeuta definidas:', therapistInfo.value);
+        console.log('Estado final - hasPsychologist:', hasPsychologist.value, 'therapistInfo:', therapistInfo.value);
+      } else {
+        console.log('Terapeuta não encontrado no banco de dados');
+        therapistInfo.value = {
+          name: 'Sábio não encontrado',
+          crp: 'CRP não disponível',
+          specialties: []
+        };
       }
+    } else {
+      console.log('Nenhum vínculo com terapeuta encontrado no perfil do usuário');
+      hasPsychologist.value = false;
+      console.log('Valor de hasPsychologist após definir como false:', hasPsychologist.value);
+      console.log('Estado final - hasPsychologist:', hasPsychologist.value, 'therapistInfo:', therapistInfo.value);
     }
   } catch (error) {
-    console.error('Error checking psychologist association:', error);
+    console.error('Erro ao verificar associação com psicólogo:', error);
     hasPsychologist.value = false;
   }
 });
