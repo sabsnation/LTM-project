@@ -22,8 +22,8 @@
           </div>
           
           <div class="text-center md:text-left">
-            <h2 class="text-2xl font-bold text-amber-900 mb-2">Dr. Nome do Psicólogo</h2>
-            <p class="text-amber-800 mb-1">CRP: XX/XXXXX</p>
+            <h2 class="text-2xl font-bold text-amber-900 mb-2">{{ userName }}</h2>
+            <p class="text-amber-800 mb-1">CRP: {{ crp }}</p>
             <p class="text-amber-800 mb-4">Especialista em Saúde Mental</p>
             
             <div class="flex flex-wrap gap-4 justify-center md:justify-start">
@@ -77,21 +77,22 @@
           <div class="space-y-4">
             <div>
               <label class="block text-amber-800 font-semibold mb-1">Email de Contato</label>
-              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">sabio@curador.com</p>
+              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">{{ userEmail }}</p>
             </div>
             
             <div>
               <label class="block text-amber-800 font-semibold mb-1">Telefone</label>
-              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">(00) 00000-0000</p>
+              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">{{ phoneNumber }}</p>
             </div>
             
             <div>
               <label class="block text-amber-800 font-semibold mb-1">Biografia</label>
               <textarea 
+                v-model="biography"
                 rows="4"
                 class="w-full px-4 py-2 border-2 border-amber-300 rounded-sm focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none text-amber-900 bg-amber-50"
                 placeholder="Escreva sobre sua prática e experiência..."
-              >Psicólogo com mais de 5 anos de experiência em terapia cognitivo-comportamental. Especialista em ansiedade, depressão e terapias de casal. Acredito no poder da escuta ativa e no fortalecimento das habilidades emocionais como ferramentas para transformar vidas.</textarea>
+              ></textarea>
             </div>
           </div>
           
@@ -105,6 +106,54 @@
 </template>
 
 <script setup>
-// Componente de Perfil do Psicólogo
-// Aqui estarão as informações e configurações do perfil do psicólogo
+import { ref, onMounted } from 'vue';
+import { getCurrentUserProfile } from '@/firebase/userProfileService';
+import { getTherapistById } from '@/firebase/firestoreService';
+import { getCurrentUser } from '@/firebase/authService';
+
+// Variáveis reativas para armazenar as informações do psicólogo
+const userName = ref('Carregando...');
+const crp = ref('');
+const specialties = ref([]);
+const education = ref('');
+const userEmail = ref('');
+const phoneNumber = ref('(00) 00000-0000');
+const biography = ref('');
+
+// Carregar as informações do perfil ao montar o componente
+onMounted(async () => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      console.error('Nenhum usuário autenticado');
+      return;
+    }
+
+    // Armazenar o email do usuário
+    userEmail.value = user.email || 'Email não fornecido';
+
+    // Carregar o perfil básico do usuário
+    const userProfile = await getCurrentUserProfile();
+    if (userProfile) {
+      userName.value = userProfile.name || user.email.split('@')[0];
+      phoneNumber.value = userProfile.phoneNumber || '(00) 00000-0000';
+      biography.value = userProfile.biography || 'Escreva sobre sua prática e experiência...';
+    }
+
+    // Carregar informações específicas do psicólogo
+    const therapistProfile = await getTherapistById(user.uid);
+    if (therapistProfile) {
+      // Atualizar CRP se estiver disponível no perfil do terapeuta
+      if (therapistProfile.crp) {
+        crp.value = therapistProfile.crp;
+      }
+      // Pode adicionar especializações e formação acadêmica futuramente
+      specialties.value = therapistProfile.specialties || [];
+      education.value = therapistProfile.education || 'Informação não fornecida';
+    }
+  } catch (error) {
+    console.error('Erro ao carregar perfil do psicólogo:', error);
+    userName.value = 'Erro ao carregar';
+  }
+});
 </script>

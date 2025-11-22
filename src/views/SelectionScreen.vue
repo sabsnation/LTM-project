@@ -100,7 +100,7 @@
             <div class="mt-2 text-center border-t border-amber-800 pt-2">
               <p class="text-sm text-amber-900 font-serif">É um sábio curador?</p>
               <router-link
-                to="/login-psicologo"
+                to="/solicitar-cadastro"
                 class="text-amber-800 hover:text-amber-950 font-bold text-sm mt-1 inline-block font-serif underline"
               >
                 Acesso ao pergaminho sábio

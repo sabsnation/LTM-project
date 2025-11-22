@@ -259,7 +259,7 @@
       <img 
         src="@/assets/historia-lbry.png"
         alt="Minha Escrita"
-        class="w-24 h-auto object-contain drop-shadow-lg cursor-pointer"
+        class="w-24 h-auto object-contain drop-shadow-lg cursor-pointer hover:scale-105 transition-transform duration-200 historia-lbry-image"
         @click="abrirModalLeitura(escrita)"
       />
     </div>
@@ -467,40 +467,45 @@ const abrirModalLeitura = (escrita) => {
 // Função para calcular a posição de cada escrita
 const getPosicaoEscrita = (index) => {
   // Cada prateleira comporta 4 escritas
-  const escritasPorPrateleira = 4; // 4 escritas por prateleira
+  const historiasPorPrateleira = 4; // 4 histórias por prateleira
   
-  // Calcular qual prateleira (dentro do lado) e posição nela
-  const prateleirasPorLado = 3; // São 3 prateleiras em cada lado
-  const escritasPorLado = prateleirasPorLado * escritasPorPrateleira; // 12 escritas por lado
+  // Determinar se é lado esquerdo ou direito (cada lado tem 3 prateleiras = 12 histórias por lado)
+  const lado = index < 12 ? 'left' : 'right';
+  const indiceNoLado = lado === 'left' ? index : index - 12;
   
-  // Determinar qual lado (esquerda ou direita)
-  const ladoIndex = Math.floor(index / escritasPorLado);
-  const lado = ladoIndex % 2 === 0 ? 'left' : 'right';
+  // Determinar qual prateleira dentro do lado (0, 1 ou 2)
+  const prateleira = Math.floor(indiceNoLado / historiasPorPrateleira);
   
-  // Determinar o índice dentro do lado
-  const indiceNoLado = index % escritasPorLado;
-  
-  // Determinar qual prateleira dentro do lado
-  const prateleiraNoLado = Math.floor(indiceNoLado / escritasPorPrateleira);
-  
-  // Determinar posição dentro da prateleira
-  const posicaoNaPrateleira = indiceNoLado % escritasPorPrateleira;
+  // Determinar posição dentro da prateleira (0, 1, 2 ou 3)
+  const posicaoNaPrateleira = indiceNoLado % historiasPorPrateleira;
   
   // Altura base - há 3 prateleiras em cada lado (esquerda e direita)
-  // Ajustando para posicionar nas 3 prateleiras de cada lado
   let topPosition = '';
   
-  if (lado === 'left' && prateleiraNoLado === 1) {
-    // Para a segunda prateleira do lado esquerdo, posicionar mais baixa
-    topPosition = 'top-[calc(50%+60px)]'; // Mais baixa que o normal
+  if (lado === 'left') {
+    // Lado esquerdo
+    if (prateleira === 0) {
+      // Primeira prateleira: manter posição original (não interferir)
+      topPosition = 'top-[calc(50%-200px)]';
+    } else if (prateleira === 1) {
+      // Segunda prateleira: manter posição mais baixa
+      topPosition = 'top-[calc(50%+160px)]';
+    } else if (prateleira === 2) {
+      // Terceira prateleira: subir um pouco
+      topPosition = 'top-[calc(50%-20px)]';
+    }
   } else {
-    // Alturas normais para todas as outras prateleiras
-    const alturas = [
-      'top-[calc(50%-200px)]', // Primeira prateleira (mais acima)
-      'top-[calc(50%-80px)]',  // Segunda prateleira (meio) - para direita e outras do lado esquerdo
-      'top-[calc(50%+40px)]'   // Terceira prateleira (mais abaixo)
-    ];
-    topPosition = alturas[prateleiraNoLado];
+    // Lado direito
+    if (prateleira === 0) {
+      // Primeira prateleira: manter posição original
+      topPosition = 'top-[calc(50%-200px)]';
+    } else if (prateleira === 1) {
+      // Segunda prateleira: posição mais baixa
+      topPosition = 'top-[calc(50%+160px)]';
+    } else if (prateleira === 2) {
+      // Terceira prateleira: subir um pouco
+      topPosition = 'top-[calc(50%-20px)]';
+    }
   }
   
   // Posição horizontal (com variação para posicionar 4 itens por prateleira)
@@ -520,7 +525,7 @@ const getPosicaoEscrita = (index) => {
   ];
   
   // Montar as classes
-  let classes = "absolute z-30 transform transition-transform hover:scale-105 cursor-pointer ";
+  let classes = "absolute z-40 transform transition-transform hover:scale-105 cursor-pointer ";
   
   // Adicionar classe de posição vertical
   classes += `${topPosition} `;
@@ -685,5 +690,10 @@ onMounted(async () => {
 
 .writings-thumbnail:hover {
   transform: scale(1.05) rotate(1deg);
+}
+
+/* Estilo para imagens de historia-lbry.png para garantir alinhamento preciso */
+.historia-lbry-image {
+  transform-origin: center bottom;
 }
 </style>

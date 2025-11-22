@@ -1,7 +1,7 @@
 <template>
   <div class="relative w-full h-screen overflow-hidden text-white fundo-personalizado-psi flex items-center justify-center">
     <!-- Container central -->
-    <div class="w-full max-w-md h-[90vh] px-4 sm:px-0 relative z-10 font-serif">
+    <div class="w-full max-w-md px-4 sm:px-0 relative z-10 font-serif">
       
       <!-- Botão Voltar -->
       <router-link
@@ -12,7 +12,7 @@
         <span class="text-base font-medium sm:text-lg">Voltar</span>
       </router-link>
 
-      <!-- Card de Login com rolagem interna -->
+      <!-- Card de Solicitação com rolagem interna -->
       <div class="bg-amber-900/90 backdrop-blur-xl rounded-lg sm:rounded-xl shadow-2xl p-6 sm:p-10 border border-amber-700 overflow-y-auto scrollbar-thin scrollbar-thumb-amber-700/60 scrollbar-track-transparent max-h-[80vh]">
         
         <div class="text-center mb-8 sm:mb-10">
@@ -26,15 +26,27 @@
           </div>
 
           <h2 class="text-2xl sm:text-4xl font-bold text-amber-100 mb-2 sm:mb-3">
-            Câmara do Sábio
+            Solicitar Credenciamento
           </h2>
           <p class="text-amber-200 text-base sm:text-lg">
-            Acesso exclusivo para curadores da mente
+            Preencha os dados para solicitar seu selo profissional
           </p>
         </div>
 
         <!-- Formulário -->
         <div class="space-y-5 sm:space-y-6">
+          <div>
+            <label class="block text-xs sm:text-sm font-medium text-amber-200 mb-2 sm:mb-3">
+              Nome Completo
+            </label>
+            <input
+              v-model="nome"
+              type="text"
+              placeholder="Seu nome completo"
+              class="w-full px-4 py-3 sm:py-4 border border-amber-700 rounded-sm focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all outline-none text-amber-900 text-sm sm:text-base bg-amber-100/90 font-serif"
+            />
+          </div>
+
           <div>
             <label class="block text-xs sm:text-sm font-medium text-amber-200 mb-2 sm:mb-3">
               Selo de Registro (CRP)
@@ -81,62 +93,46 @@
             {{ error }}
           </div>
 
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-2 gap-2 sm:gap-0">
-            <label class="flex items-center cursor-pointer group">
-              <input v-model="remember" type="checkbox" class="rounded text-amber-600 mr-2 sm:mr-3 w-4 h-4 sm:w-5 sm:h-5 border-amber-500" />
-              <span class="text-amber-200 text-sm sm:text-base group-hover:text-amber-100">
-                Manter selo ativo
-              </span>
-            </label>
-            <button class="text-amber-300 hover:text-amber-100 font-semibold text-sm sm:text-base underline">
-              Recuperar acesso
-            </button>
-          </div>
-
           <button
-            @click="handleLogin"
+            @click="handleSubmit"
             :disabled="loading"
             class="w-full bg-gradient-to-r from-amber-700 to-amber-900 text-amber-100 py-3 sm:py-4 rounded-sm font-bold text-base sm:text-lg hover:from-amber-600 hover:to-amber-800 transition-all shadow-lg hover:shadow-amber-500/50 transform hover:-translate-y-0.5 border border-amber-600 disabled:opacity-50"
           >
-            <span v-if="!loading">Selo de Acesso ao Sábio</span>
+            <span v-if="!loading">Solicitar Credenciamento</span>
             <span v-else>Processando...</span>
-          </button>
-
-          <button
-            @click="handleGoogleLogin"
-            :disabled="loading"
-            class="w-full bg-red-500 text-white py-2.5 sm:py-3.5 rounded-sm font-bold text-base sm:text-lg hover:bg-red-600 transition-all shadow-lg transform hover:-translate-y-0.5 border border-red-600 disabled:opacity-50 mt-2"
-          >
-            Continuar com Google
           </button>
         </div>
 
-
+        <div class="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-amber-700">
+          <p class="text-amber-200 text-center text-sm sm:text-base">
+            Já é credenciado?
+            <router-link to="/login-psicologo" class="text-amber-300 hover:text-amber-100 font-bold underline">
+              Acesse seu pergaminho sábio
+            </router-link>
+          </p>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ArrowLeft, Mail, Lock } from 'lucide-vue-next'
-import { 
-  loginUser, 
-  loginWithGoogle as googleLogin 
-} from '@/firebase/authService';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { ArrowLeft, Mail, Lock } from 'lucide-vue-next';
+import { registerUser, loginUser } from '@/firebase/authService';
 import { createTherapist } from '@/firebase/firestoreService';
 
-const crp = ref('')
-const email = ref('')
-const password = ref('')
-const remember = ref(false)
-const loading = ref(false)
-const error = ref('')
-const router = useRouter()
+const nome = ref('');
+const crp = ref('');
+const email = ref('');
+const password = ref('');
+const loading = ref(false);
+const error = ref('');
+const router = useRouter();
 
-const handleLogin = async () => {
-  if (!email.value || !password.value) {
+const handleSubmit = async () => {
+  if (!nome.value || !crp.value || !email.value || !password.value) {
     error.value = 'Por favor, preencha todos os campos.';
     return;
   }
@@ -145,63 +141,43 @@ const handleLogin = async () => {
   error.value = '';
 
   try {
-    const user = await loginUser(email.value, password.value);
-    console.log('Psicólogo logado com sucesso:', user);
+    // Registrar usuário no Firebase Auth
+    const user = await registerUser(email.value, password.value);
+    console.log('Usuário psicólogo registrado com sucesso:', user);
+
+    // Criar perfil de terapeuta no Firestore
+    await createTherapist({
+      id: user.uid,
+      email: user.email,
+      name: nome.value,
+      crp: crp.value,
+      status_verification: 'pending', // Status pendente para aprovação
+      code_vinculo: generateCodeVinculo(), // Gerar código único para vinculação
+      createdAt: new Date()
+    });
+
+    // Fazer login com as credenciais recém-criadas
+    await loginUser(email.value, password.value);
+    console.log('Psicólogo logado automaticamente após cadastro');
+    
+    // O router guard irá redirecionar automaticamente para o dashboard correto
     router.push('/psychologist/dashboard');
   } catch (err) {
-    console.error('Login error:', err);
-    if (err.code === 'auth/user-not-found') {
-      error.value = 'Nenhuma conta encontrada com este e-mail.';
-    } else if (err.code === 'auth/wrong-password') {
-      error.value = 'Senha incorreta.';
+    console.error('Erro na solicitação de credenciamento:', err);
+    if (err.code === 'auth/email-already-in-use') {
+      error.value = 'Este e-mail já está em uso.';
     } else {
-      error.value = 'Erro no login. Por favor, tente novamente. Detalhes: ' + err.message;
+      error.value = 'Erro ao solicitar credenciamento. Por favor, tente novamente.';
     }
   } finally {
     loading.value = false;
   }
-}
+};
 
-const handleGoogleLogin = async () => {
-  loading.value = true;
-  error.value = '';
-
-  try {
-    const user = await googleLogin();
-    
-    // Create therapist profile in Firestore if doesn't exist
-    try {
-      await createTherapist({
-        id: user.uid,
-        email: user.email,
-        name: user.displayName || user.email.split('@')[0],
-        crp: crp.value || 'Não informado',
-        status_verification: 'pending', // Default status
-        code_vinculo: generateCodeVinculo(), // Generate a unique code for linking
-        createdAt: new Date()
-      });
-    } catch (e) {
-      // Therapist profile may already exist, that's fine
-      console.log('Therapist profile may already exist:', e.message);
-    }
-    
-    router.push('/psychologist/dashboard');
-  } catch (err) {
-    console.error('Google login error:', err);
-    error.value = 'Erro no login com Google. Por favor, tente novamente.';
-  } finally {
-    loading.value = false;
-  }
-}
-
-// Generate a unique code for linking patients to therapists
+// Gerar código único para vinculação
 const generateCodeVinculo = () => {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
-}
-
-onMounted(() => {
-  document.body.classList.remove('selection-screen-body')
-})
+};
 </script>
 
 <style scoped>

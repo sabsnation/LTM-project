@@ -30,6 +30,12 @@
     >
       <p class="text-2xl font-bold text-amber-100 mb-3 drop-shadow-lg">nenhum sábio reside aqui.</p>
       <p class="text-lg text-amber-200 drop-shadow-md">Para acessar os recursos da Casa do Sábio, você precisa estar vinculado a um psicólogo.</p>
+      <button
+        @click="showLinkModal = true"
+        class="mt-4 px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100 rounded-sm font-bold hover:from-amber-500 hover:to-amber-700 transition-all border border-amber-500"
+      >
+        Vincular-se a um Sábio
+      </button>
     </div>
     
     <!-- Conteúdo exibido quando o usuário tem vinculação com um psicólogo -->
@@ -37,20 +43,36 @@
       v-else
       class="absolute right-8 top-1/2 transform -translate-y-1/2 z-20 max-w-md w-full"
     >
+      <div class="mb-6">
+        <h3 class="text-2xl font-bold text-amber-800 mb-2">Sábio Associado</h3>
+        <div class="bg-amber-100/70 border border-amber-300 rounded-lg p-4">
+          <p class="text-lg font-semibold text-amber-900">{{ therapistInfo.name }}</p>
+          <p class="text-amber-800">CRP: {{ therapistInfo.crp }}</p>
+          <p v-if="therapistInfo.specialties && therapistInfo.specialties.length" class="text-amber-800 mt-1">
+            Especialidades: {{ therapistInfo.specialties.join(', ') }}
+          </p>
+        </div>
+      </div>
+      
       <p class="text-amber-700 mb-6">
         Bem-vindo à Casa do Sábio! Aqui você encontrará recursos e conteúdos relacionados ao seu processo terapêutico.
       </p>
       
       <!-- Futuramente, esta seção conterá recursos e conteúdos relacionados ao psicólogo -->
       <div class="bg-amber-100/50 border border-amber-300 rounded-lg p-4">
-        <h2 class="text-xl font-semibold text-amber-800 mb-3">Em Desenvolvimento</h2>
+        <h2 class="text-xl font-semibold text-amber-800 mb-3">Recursos do Sábio</h2>
         <p class="text-amber-700">
-          Este espaço será personalizado com base em seu vínculo terapêutico. 
-          Em breve, você encontrará aqui materiais, exercícios e recursos específicos 
+          Este espaço está personalizado com base em seu vínculo terapêutico. 
+          Aqui você encontrará materiais, exercícios e recursos específicos 
           fornecidos pelo seu psicólogo.
         </p>
       </div>
     </main>
+    
+    <!-- Modal para vincular ao sábio -->
+    <div v-if="showLinkModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <LinkToTherapistModal @close="showLinkModal = false" />
+    </div>
 
     <!-- Camada de brilho suave -->
     <div class="absolute inset-0 bg-gradient-to-t from-orange-500/20 to-transparent animate-gradient-move"></div>
@@ -61,15 +83,29 @@
 import { ref, onMounted } from 'vue';
 import { ArrowLeft } from 'lucide-vue-next';
 import { getCurrentUserProfile } from '@/firebase/userProfileService';
+import { getTherapistById } from '@/firebase/firestoreService';
+import LinkToTherapistModal from '@/components/LinkToTherapistModal.vue';
 
 // Verifica se o usuário tem vinculação com um psicólogo
 const hasPsychologist = ref(false);
+const showLinkModal = ref(false);
+const therapistInfo = ref({});
 
 onMounted(async () => {
   try {
     const profile = await getCurrentUserProfile();
     if (profile && profile.therapist_linked_id) {
       hasPsychologist.value = true;
+      
+      // Carregar informações do psicólogo vinculado
+      const therapist = await getTherapistById(profile.therapist_linked_id);
+      if (therapist) {
+        therapistInfo.value = {
+          name: therapist.name || 'Sábio não identificado',
+          crp: therapist.crp || 'CRP não informado',
+          specialties: therapist.specialties || []
+        };
+      }
     }
   } catch (error) {
     console.error('Error checking psychologist association:', error);

@@ -302,7 +302,7 @@ const selectedMoodImage = computed(() => {
 
 
 const moods = [
-  { id: 'feliz', label: 'Feliz', img: '@/assets/gato feliz.webp'},
+  { id: 'feliz', label: 'Feliz', img: '@/assets/gatodesconfiado.jpeg'},
   { id: 'calmo', label: 'Cansado', img: '@/assets/gato cansado.webp' },
   { id: 'triste', label: 'Triste', img: '@/assets/gato triste.jpg' },
   { id: 'ansioso', label: 'Ansioso', img: '@/assets/gato existencial.jpeg' },

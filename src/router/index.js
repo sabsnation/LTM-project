@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getCurrentUser } from '@/firebase/authService'
+import { getTherapistById } from '@/firebase/firestoreService'
 import PatientLogin from '@/views/PatientLogin.vue'
 import SelectionScreen from '@/views/SelectionScreen.vue'
 import PsychologistLogin from '@/views/PsychologistLogin.vue'
@@ -14,6 +15,7 @@ import SageHouse from '@/views/SageHouse.vue'
 import PatientNotifications from '@/views/PatientNotifications.vue' // ⬅️ adicione esta linha
 import VillageLibrary from '@/views/VillageLibrary.vue'
 import FirebaseTest from '@/views/FirebaseTest.vue'
+import SolicitarCadastro from '@/views/SolicitarCadastro.vue'
 
 const routes = [
   {
@@ -100,8 +102,31 @@ const routes = [
     path: '/firebase-test',
     name: 'firebase-test',
     component: FirebaseTest
+  },
+  {
+    path: '/solicitar-cadastro',
+    name: 'solicitar-cadastro',
+    component: SolicitarCadastro
   }
 ]
+
+// Function to determine user type and redirect to appropriate dashboard
+const redirectBasedOnUserType = async (currentUser, next) => {
+  try {
+    // Try to get therapist profile to determine if user is a therapist
+    const therapistProfile = await getTherapistById(currentUser.uid);
+    if (therapistProfile) {
+      // User is a therapist, redirect to therapist dashboard
+      next('/psychologist/dashboard');
+    } else {
+      // User is a patient, redirect to patient dashboard
+      next('/patient/dashboard');
+    }
+  } catch (error) {
+    // If there's an error getting therapist profile, assume it's a patient
+    next('/patient/dashboard');
+  }
+};
 
 const router = createRouter({
   history: createWebHistory(),
@@ -119,11 +144,9 @@ router.beforeEach(async (to, from, next) => {
     console.log('Rota requer autenticação mas usuário não está logado, redirecionando para /')
     next('/')
   } else if ((to.name === 'patient-login' || to.name === 'psychologist-login') && currentUser) {
-    // If user is logged in and tries to access login screens, redirect to dashboard
-    console.log('Usuário está logado, redirecionando para dashboard')
-    if (currentUser.email) { // Could implement role-based redirection later
-      next('/patient/dashboard') // Default to patient dashboard for now
-    }
+    // If user is logged in and tries to access login screens, redirect to appropriate dashboard
+    console.log('Usuário está logado, redirecionando para dashboard apropriado')
+    redirectBasedOnUserType(currentUser, next);
   } else {
     console.log('Permitindo acesso à rota')
     next()

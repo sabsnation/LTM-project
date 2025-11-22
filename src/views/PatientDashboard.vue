@@ -72,32 +72,31 @@
     />
     
     <!-- Contêiner para sol e lua com animação de transição -->
-    <div class="absolute top-0 left-0" style="margin-top: 10px; margin-left: 10px; z-index: 40; width: 8rem; height: auto;">
+    <div class="absolute top-0 left-20" style="margin-top: 10px; margin-left: 10px; z-index: 40; width: 8rem; height: auto;">
       <!-- Sol e Lua - ambos no DOM para permitir animações -->
-      <img
-        v-if="showSol"
-        src="@/assets/sol.png"
-        alt="Sol"
-        class="w-32 h-auto absolute top-0 left-0"
-        :class="{ 'animate-sol-descendo': shouldAnimateSol }"
-        @animationend="onSolAnimationEnd"
-      />
-      <img
-        v-if="showLua"
-        src="@/assets/lua.png"
-        alt="Lua"
-        class="w-28 h-auto absolute top-0 left-0"
-        :class="{ 'animate-lua-descendo': shouldAnimateLua }"
-        @animationend="onLuaAnimationEnd"
-      />
+      <div v-if="showSol" class="absolute top-0 left-0 w-36 h-36">
+        <div class="absolute inset-0 bg-yellow-400 rounded-full filter blur-3xl opacity-60 w-full h-full -left-12 -top-12 -z-10 animate-moon-glow"></div>
+        <img
+          src="@/assets/sol.png"
+          alt="Sol"
+          class="w-36 h-auto relative z-10"
+          :class="{ 'animate-sol-descendo': shouldAnimateSol }"
+          @animationend="onSolAnimationEnd"
+        />
+      </div>
+      <div v-if="showLua" class="absolute top-0 left-0 w-28 h-28">
+        <div class="absolute inset-0 bg-blue-300 rounded-full filter blur-3xl opacity-70 w-full h-full -left-16 -top-16 -z-10 animate-moon-glow"></div>
+        <img
+          src="@/assets/lua.png"
+          alt="Lua"
+          class="w-28 h-auto relative z-10"
+          :class="{ 'animate-lua-descendo': shouldAnimateLua }"
+          @animationend="onLuaAnimationEnd"
+        />
+      </div>
     </div>
     
-    <!-- Imagem papel-fundo-baixo no canto inferior direito -->
-    <img
-      src="@/assets/papel-fundo-baixo.png"
-      alt="Papel fundo baixo"
-      class="absolute bottom-0 right-0 w-60 h-auto z-10"
-    />
+
     
     <!-- Nome do usuário e mensagem de boas-vindas -->
     <div class="absolute top-0 left-1/2 transform -translate-x-1/2 z-10 text-center pt-4">
@@ -136,13 +135,12 @@
       <!-- Biblioteca -->
       <router-link
         to="/patient/village-library"
-        class="absolute bottom-28 left-24 hover:scale-105 transition-transform duration-300"
+        class="absolute bottom-32 left-24 hover:scale-105 transition-transform duration-300"
       >
-        <!-- Aumentado de w-48 para w-64 -->
         <img
           src="@/assets/torre_do_conhecimento-removebg-preview.png"
           alt="Biblioteca"
-          class="w-64 h-auto drop-shadow-lg hover:brightness-110"
+          class="w-72 h-auto drop-shadow-lg hover:brightness-110"
         />
       </router-link>
 
@@ -207,14 +205,39 @@
       </div>
     </main>
 
+    <!-- Imagem terra.png na parte inferior esticada -->
+    <img
+      src="@/assets/terra.png"
+      alt="Terra"
+      class="absolute bottom-0 left-0 w-full h-auto object-cover z-15"
+    />
+
     <!-- Camada de brilho suave -->
     <div class="absolute inset-0 bg-gradient-to-t from-orange-500/20 to-transparent animate-gradient-move"></div>
+    
+    <!-- Estrelas no modo escuro -->
+    <div v-if="isDarkMode" class="absolute inset-0 z-5 overflow-hidden">
+      <div 
+        v-for="star in 100" 
+        :key="star"
+        class="absolute rounded-full bg-white animate-twinkle"
+        :style="{
+          top: `${Math.random() * 100}%`,
+          left: `${Math.random() * 100}%`,
+          width: `${Math.random() * 3 + 1}px`,
+          height: `${Math.random() * 3 + 1}px`,
+          opacity: Math.random() * 0.8 + 0.2,
+          animationDelay: `${Math.random() * 3}s`,
+          animationDuration: `${Math.random() * 3 + 2}s`
+        }"
+      ></div>
+    </div>
     
     <!-- Luz na extrema esquerda da tela, centralizada verticalmente, levemente fora da tela à esquerda -->
     <div class="absolute left-0 top-1/2 transform -translate-y-1/2 z-50 w-32 h-32">
       <div 
         :class="isDarkMode ? 
-          'absolute inset-0 bg-blue-300 rounded-full filter blur-3xl opacity-30 w-full h-full -left-12 -top-12' : 
+          'absolute inset-0 bg-blue-300 rounded-full filter blur-3xl opacity-80 w-full h-full -left-12 -top-12 animate-pulse' : 
           'absolute inset-0 bg-yellow-300 rounded-full filter blur-3xl opacity-30 animate-pulse w-full h-full -left-12 -top-12'"
       ></div>
       <img
@@ -497,6 +520,38 @@ const handleLogout = async () => {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+/* Animação para estrelas twinkling */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Animação para brilho da lua */
+@keyframes moon-glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle 3s infinite ease-in-out;
+}
+
+.animate-moon-glow {
+  animation: moon-glow 4s infinite ease-in-out;
 }
 
 .animate-sol-descendo {
