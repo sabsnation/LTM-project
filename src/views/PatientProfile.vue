@@ -40,6 +40,16 @@
                 <p class="text-sm">Progresso</p>
               </div>
             </div>
+            
+            <!-- Mood Tracker -->
+            <div class="mt-4 mood-tracker" @click="showMoodModal = true">
+              <div class="flex items-center gap-3 p-3 bg-amber-200 rounded-lg border border-amber-300 cursor-pointer hover:bg-amber-300 transition-colors">
+                <img :src="gatoHumorImage" alt="Gatinho Sir Favo de Mel" class="w-10 h-10 rounded-full">
+                <div class="mood-message">
+                  <p class="text-amber-900 font-medium">{{ dailyMood || 'Como você está se sentindo hoje?' }}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -106,6 +116,47 @@
         </div>
       </div>
     </div>
+    
+    <!-- Modal de Registro de Humor -->
+    <div v-if="showMoodModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click="closeModal">
+      <div class="modal-content bg-white rounded-xl p-6 w-full max-w-md" @click.stop>
+        <div class="modal-header flex items-center gap-3 mb-4">
+          <img :src="gatoHumorImage" alt="Gatinho Sir Favo de Mel" class="w-10 h-10">
+          <h3 class="text-xl font-bold text-amber-900">Gatinho Sir Favo de Mel</h3>
+        </div>
+        <div class="modal-body">
+          <p class="text-amber-800 mb-4">Gatinho Sir Favo de Mel deseja saber seu humor de hoje. Ele é apenas curioso.</p>
+          
+          <div class="mood-input mb-4">
+            <label class="block text-amber-800 font-semibold mb-2">Como você está se sentindo?</label>
+            <input 
+              v-model="currentMood" 
+              type="text" 
+              placeholder="Digite seu humor em uma palavra..."
+              class="w-full px-4 py-2 border-2 border-amber-300 rounded-sm focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none text-amber-900 bg-amber-50"
+              @keyup.enter="saveMood"
+            >
+          </div>
+          
+          <div class="mood-suggestions">
+            <div class="flex flex-wrap gap-2">
+              <button 
+                v-for="suggestion in moodSuggestions" 
+                :key="suggestion"
+                @click="selectMoodSuggestion(suggestion)"
+                class="suggestion-btn px-3 py-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-full text-sm cursor-pointer transition-colors"
+              >
+                {{ suggestion }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer mt-6 flex justify-between">
+          <button @click="closeModal" class="btn-cancel px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-sm font-medium transition-colors">Cancelar</button>
+          <button @click="saveMood" class="btn-save px-6 py-2 bg-amber-700 hover:bg-amber-600 text-amber-100 rounded-sm font-medium transition-colors">Salvar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -113,6 +164,10 @@
 import { ref, onMounted } from 'vue';
 import { getCurrentUserProfile, updateCurrentUserProfile } from '@/firebase/userProfileService';
 import { getUserLetters } from '@/firebase/firestoreService';
+import { getAuth } from 'firebase/auth';
+import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db } from '@/firebase/init';
+import gatoHumorImg from '@/assets/gato-humor.png';
 
 // Dados do usuário
 const userProfile = ref({
@@ -134,6 +189,81 @@ const editingProfile = ref({
 
 const lettersCount = ref(0);
 const saving = ref(false);
+
+// Estados para o mood tracker
+const showMoodModal = ref(false);
+const currentMood = ref('');
+const dailyMood = ref('');
+const gatoHumorImage = ref(gatoHumorImg);
+
+const moodSuggestions = [
+  'Feliz', 'Triste', 'Ansioso', 'Calmo', 'Empolgado', 
+  'Cansado', 'Motivado', 'Deprimido', 'Grato', 'Confuso'
+];
+
+// Função para carregar o humor diário do usuário
+const loadUserMoodData = async () => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  
+  if (!user) return;
+
+  try {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      dailyMood.value = userData.dailyMood || '';
+    }
+  } catch (error) {
+    console.error('Erro ao carregar dados de humor:', error);
+  }
+};
+
+// Função para salvar o humor
+const saveMood = async () => {
+  if (!currentMood.value.trim()) return;
+
+  const auth = getAuth();
+  const user = auth.currentUser;
+  
+  if (!user) return;
+
+  try {
+    const userDocRef = doc(db, 'users', user.uid);
+    
+    // Adiciona o humor atual ao histórico
+    await updateDoc(userDocRef, {
+      dailyMood: currentMood.value.trim(),
+      moodHistory: arrayUnion({
+        mood: currentMood.value.trim(),
+        timestamp: new Date(),
+        date: new Date().toISOString().split('T')[0] // YYYY-MM-DD
+      })
+    });
+
+    dailyMood.value = currentMood.value.trim();
+    currentMood.value = '';
+    showMoodModal.value = false;
+
+    // Atualizar o humor também no perfil localmente
+    userProfile.value.dailyMood = currentMood.value.trim();
+  } catch (error) {
+    console.error('Erro ao salvar humor:', error);
+  }
+};
+
+// Função para selecionar uma sugestão de humor
+const selectMoodSuggestion = (suggestion) => {
+  currentMood.value = suggestion;
+};
+
+// Função para fechar o modal
+const closeModal = () => {
+  showMoodModal.value = false;
+  currentMood.value = '';
+};
 
 // Função para formatar data
 const formatDate = (date) => {
@@ -207,7 +337,8 @@ onMounted(async () => {
         bio: profile.bio || '',
         role: profile.role || 'patient',
         progress: profile.progress || 0,
-        createdAt: profile.createdAt
+        createdAt: profile.createdAt,
+        dailyMood: profile.dailyMood || '' // Adicionando o dailyMood ao perfil
       };
       
       // Atualizar os dados de edição com os valores atuais
@@ -218,6 +349,9 @@ onMounted(async () => {
       
       // Carregar a contagem de cartas
       loadLettersCount();
+      
+      // Carregar dados do mood
+      loadUserMoodData();
     }
   } catch (error) {
     console.error('Erro ao carregar perfil:', error);
