@@ -441,26 +441,51 @@ const loadLinkedPatients = async (therapistId) => {
         
         if (patientDoc.exists()) {
           const userData = patientDoc.data();
+          console.log('Dados do paciente carregados com sucesso:', userData);
           pacientes.push({
             id: patientDoc.id,
             name: userData.name || userData.email?.split('@')[0] || 'Paciente Anônimo',
             email: userData.email,
-            linkedAt: invite.updatedAt || invite.createdAt || new Date() // Data do aceite do convite
+            linkedAt: invite.acceptedAt || invite.updatedAt || invite.createdAt || new Date() // Data do aceite do convite
+          });
+        } else {
+          // O documento do paciente não existe
+          console.log('Documento do paciente não encontrado:', invite.patientId);
+          pacientes.push({
+            id: invite.patientId,
+            name: 'Paciente (sem perfil)',
+            email: 'N/A',
+            linkedAt: invite.acceptedAt || invite.updatedAt || invite.createdAt || new Date()
           });
         }
       } catch (patientError) {
         console.error('Erro ao carregar dados do paciente:', patientError);
+        console.error('Convite relacionado:', invite);
         // Adiciona o paciente com informações mínimas mesmo com erro
-        pacientes.push({
-          id: invite.patientId,
-          name: 'Paciente (dados restritos)',
-          email: 'N/A',
-          linkedAt: invite.updatedAt || invite.createdAt || new Date()
-        });
+        // Verificar se o erro é de permissão e tentar lidar de forma diferente
+        if (patientError.code === 'permission-denied') {
+          // Neste caso, o terapeuta não tem permissão para ler os dados do paciente
+          // Isso pode acontecer se o campo therapist_linked_id não estiver atualizado corretamente
+          console.log('Erro de permissão ao acessar dados do paciente:', invite.patientId);
+          pacientes.push({
+            id: invite.patientId,
+            name: 'Paciente (sem permissão de acesso)',
+            email: 'N/A',
+            linkedAt: invite.acceptedAt || invite.updatedAt || invite.createdAt || new Date()
+          });
+        } else {
+          pacientes.push({
+            id: invite.patientId,
+            name: 'Paciente (erro ao carregar)',
+            email: 'N/A',
+            linkedAt: invite.acceptedAt || invite.updatedAt || invite.createdAt || new Date()
+          });
+        }
       }
     }
     
     linkedPatients.value = pacientes;
+    console.log('Pacientes vinculados carregados:', pacientes);
   } catch (error) {
     console.error('Error loading linked patients:', error);
     // Se não conseguir carregar os pacientes, manter a lista vazia
@@ -498,13 +523,39 @@ const copiarCodigoVinculo = async () => {
 //Função para aceitar um convite
 const aceitarConvite = async (invitationId) => {
   try {
-    const { acceptInvitation } = await import('@/firebase/invitationService');
-    await acceptInvitation(invitationId);
-    alert('Convite aceito com sucesso!');
-    // Recarregar os convites pendentes
+    // Primeiro, obter detalhes do convite para saber qual paciente está sendo vinculado
+    const { getInvitationById, updateInvitationStatus } = await import('@/firebase/invitationService');
+    const invitation = await getInvitationById(invitationId);
+    
+    if (!invitation || invitation.status !== 'pending') {
+        throw new Error('Convite inválido ou já processado');
+    }
+    
+    // Atualizar o status do convite para aceito
+    await updateInvitationStatus(invitationId, 'accepted', {
+      acceptedAt: serverTimestamp()
+    });
+    
+    // Agora atualizar o perfil do paciente para vinculá-lo ao terapeuta
+    // Isso deve ser feito via uma função que pode atualizar o perfil de outro usuário
+    const { doc, updateDoc } = await import('firebase/firestore');
+    const { db } = await import('@/firebase/init');
+    
+    const patientDocRef = doc(db, 'users', invitation.patientId);
+    await updateDoc(patientDocRef, {
+      therapist_linked_id: invitation.therapistId,
+      role: 'patient'  // Update role to patient when linked to therapist
+    });
+    
+    alert('Convite aceito com sucesso! Paciente vinculado.');
+    // Recarregar os convites pendentes e pacientes vinculados
     const user = await getCurrentUser();
     if (user) {
       await loadPendingInvitations(user.uid);
+      // Aguardar um breve momento para garantir que o Firestore atualize o campo therapist_linked_id
+      setTimeout(() => {
+        loadLinkedPatients(user.uid);
+      }, 1000); // Aguarda 1 segundo antes de recarregar os pacientes vinculados
     }
   } catch (error) {
     console.error('Erro ao aceitar convite:', error);

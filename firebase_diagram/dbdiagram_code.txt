@@ -1,0 +1,55 @@
+Table "users" {
+  "id" STRING
+  "name" STRING
+  "email" STRING
+  "therapist_linked_id" STRING
+  "createdAt" TIMESTAMP
+  "updatedAt" TIMESTAMP
+}
+
+Table "therapists" {
+  "id" STRING
+  "name" STRING
+  "email" STRING
+  "crp" STRING
+  "status_verification" STRING
+  "code_link" STRING
+  "createdAt" TIMESTAMP
+  "updatedAt" TIMESTAMP
+}
+
+Table "letters" {
+  "id" STRING
+  "author_id" STRING
+  "encrypted_content" STRING
+  "openDate" TIMESTAMP
+  "shared_with_therapist" BOOLEAN
+  "title" STRING
+  "createdAt" TIMESTAMP
+  "updatedAt" TIMESTAMP
+  "unlockNotificationSent" BOOLEAN
+}
+
+Table "invitations" {
+  "id" STRING
+  "patientId" STRING
+  "therapistId" STRING
+  "status" STRING
+  "createdAt" TIMESTAMP
+  "updatedAt" TIMESTAMP
+}
+
+Table "library_writings" {
+  "id" STRING
+  "author_id" STRING
+  "encrypted_content" STRING
+  "title" STRING
+  "createdAt" TIMESTAMP
+  "updatedAt" TIMESTAMP
+}
+
+Ref: "users.id" < "letters.author_id"
+Ref: "users.id" < "library_writings.author_id"
+Ref: "users.therapist_linked_id" < "therapists.id"
+Ref: "users.id" < "invitations.patientId"
+Ref: "therapists.id" < "invitations.therapistId"

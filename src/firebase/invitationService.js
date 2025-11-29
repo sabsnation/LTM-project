@@ -95,7 +95,7 @@ const updateInvitationStatus = async (invitationId, status, additionalData = {})
 };
 
 // Accept an invitation and link patient to therapist
-const acceptInvitation = async (invitationId, patientId) => {
+const acceptInvitation = async (invitationId) => {
   try {
     // Get the invitation details
     const invitation = await getInvitationById(invitationId);
@@ -104,10 +104,12 @@ const acceptInvitation = async (invitationId, patientId) => {
     }
 
     // Update the invitation status to accepted
-    await updateInvitationStatus(invitationId, 'accepted');
+    await updateInvitationStatus(invitationId, 'accepted', {
+      acceptedAt: serverTimestamp()
+    });
 
-    // Link the patient to the therapist
-    // Import linkToTherapist function from userProfileService
+    // Link the patient to the therapist by updating patient's profile
+    // The patient who accepts the invitation is the currently authenticated user
     const { linkToTherapist } = await import('./userProfileService.js');
     await linkToTherapist(invitation.therapistId);
 
