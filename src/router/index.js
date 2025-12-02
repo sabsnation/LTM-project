@@ -12,17 +12,14 @@ import PatientLetters from '@/views/PatientLetters.vue'
 import ViewLetter from '@/views/ViewLetter.vue'
 import KnowledgeTower from '@/views/KnowledgeTower.vue'
 import SageHouse from '@/views/SageHouse.vue'
-import PatientNotifications from '@/views/PatientNotifications.vue' // ⬅️ adicione esta linha
+import PatientNotifications from '@/views/PatientNotifications.vue'
 import VillageLibrary from '@/views/VillageLibrary.vue'
 import FirebaseTest from '@/views/FirebaseTest.vue'
 import SolicitarCadastro from '@/views/SolicitarCadastro.vue'
+import PatientMoodDetail from '@/views/PatientMoodDetail.vue'
+
 
 const routes = [
-  {
-    path: '/',
-    name: 'selection',
-    component: SelectionScreen
-  },
   {
     path: '/',
     name: 'selection',
@@ -81,7 +78,7 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/patient/notifications', // ⬅️ NOVA ROTA
+    path: '/patient/notifications',
     name: 'patient-notifications',
     component: PatientNotifications,
     meta: { requiresAuth: true }
@@ -96,6 +93,12 @@ const routes = [
     path: '/psychologist/profile',
     name: 'psychologist-profile',
     component: PsychologistProfile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/psychologist/patient/:id',
+    name: 'patient-mood-detail',
+    component: PatientMoodDetail,
     meta: { requiresAuth: true }
   },
   {

@@ -149,11 +149,48 @@ const unlinkFromTherapist = async () => {
   }
 }
 
+// Get all patients linked to a therapist
+const getLinkedPatients = async (therapistId) => {
+  if (!therapistId) throw new Error('Therapist ID is required')
+  
+  try {
+    const q = query(collection(db, 'users'), where('therapist_linked_id', '==', therapistId))
+    const querySnapshot = await getDocs(q)
+    
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  } catch (error) {
+    console.error('Error getting linked patients:', error)
+    throw error
+  }
+}
+
+// Get patient profile by ID
+const getPatientProfileById = async (patientId) => {
+  if (!patientId) throw new Error('Patient ID is required');
+
+  try {
+    const patientDocRef = doc(db, 'users', patientId);
+    const patientDoc = await getDoc(patientDocRef);
+
+    if (patientDoc.exists()) {
+      return { id: patientDoc.id, ...patientDoc.data() };
+    } else {
+      console.log('No such patient document!');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting patient profile:', error);
+    throw error;
+  }
+};
+
 export {
   getCurrentUserProfile,
   updateCurrentUserProfile,
   getTherapistById,
   getTherapistByCode,
   linkToTherapist,
-  unlinkFromTherapist
+  unlinkFromTherapist,
+  getLinkedPatients,
+  getPatientProfileById
 }

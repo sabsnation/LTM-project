@@ -216,7 +216,10 @@
             :key="patient.id"
             class="mb-3 p-2 bg-amber-50/80 rounded border border-amber-300"
           >
-            <p class="font-semibold text-amber-800 text-sm">{{ patient.name }}</p>
+            <router-link :to="{ name: 'patient-mood-detail', params: { id: patient.id } }" class="font-semibold text-amber-800 text-sm hover:underline">
+              {{ patient.name }}
+            </router-link>
+            <p class="text-xs text-amber-700 mt-1">Humor: {{ patient.dailyMood || 'N/A' }}</p>
             <p class="text-xs text-amber-700 mt-1">Vinculado em: {{ formatDate(patient.linkedAt) }}</p>
           </div>
         </div>
@@ -285,7 +288,7 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 import { LogOut } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { logoutUser, getCurrentUser } from '@/firebase/authService';
-import { getCurrentUserProfile } from '@/firebase/userProfileService';
+import { getCurrentUserProfile, getLinkedPatients } from '@/firebase/userProfileService';
 import { getTherapistById } from '@/firebase/firestoreService';
 
 // Estados para controlar o modo escuro e transições
@@ -406,89 +409,14 @@ const loadPendingInvitations = async (therapistId) => {
 // Função para carregar pacientes vinculados
 const loadLinkedPatients = async (therapistId) => {
   try {
-    // Buscar primeiro os convites aceitos para encontrar os pacientes vinculados
-    // Como não podemos usar a consulta diretamente, vamos buscar todos os convites do terapeuta
-    // e filtrar os aceitos localmente
-    const { collection, getDocs, query, where } = await import('firebase/firestore');
-    const { db } = await import('@/firebase/init');
-    
-    // Query para encontrar todos os convites do terapeuta
-    const q = query(
-      collection(db, 'invitations'),
-      where('therapistId', '==', therapistId)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    const allInvitations = [];
-    
-    for (const docSnap of querySnapshot.docs) {
-      allInvitations.push({ id: docSnap.id, ...docSnap.data() });
-    }
-    
-    // Filtrar apenas os convites aceitos
-    const acceptedInvites = allInvitations.filter(inv => inv.status === 'accepted');
-    
-    const pacientes = [];
-    
-    for (const invite of acceptedInvites) {
-      // Pegar informações do paciente de forma mais segura
-      try {
-        const { getDoc, doc } = await import('firebase/firestore');
-        const { db } = await import('@/firebase/init');
-        
-        const patientDocRef = doc(db, 'users', invite.patientId);
-        const patientDoc = await getDoc(patientDocRef);
-        
-        if (patientDoc.exists()) {
-          const userData = patientDoc.data();
-          console.log('Dados do paciente carregados com sucesso:', userData);
-          pacientes.push({
-            id: patientDoc.id,
-            name: userData.name || userData.email?.split('@')[0] || 'Paciente Anônimo',
-            email: userData.email,
-            linkedAt: invite.acceptedAt || invite.updatedAt || invite.createdAt || new Date() // Data do aceite do convite
-          });
-        } else {
-          // O documento do paciente não existe
-          console.log('Documento do paciente não encontrado:', invite.patientId);
-          pacientes.push({
-            id: invite.patientId,
-            name: 'Paciente (sem perfil)',
-            email: 'N/A',
-            linkedAt: invite.acceptedAt || invite.updatedAt || invite.createdAt || new Date()
-          });
-        }
-      } catch (patientError) {
-        console.error('Erro ao carregar dados do paciente:', patientError);
-        console.error('Convite relacionado:', invite);
-        // Adiciona o paciente com informações mínimas mesmo com erro
-        // Verificar se o erro é de permissão e tentar lidar de forma diferente
-        if (patientError.code === 'permission-denied') {
-          // Neste caso, o terapeuta não tem permissão para ler os dados do paciente
-          // Isso pode acontecer se o campo therapist_linked_id não estiver atualizado corretamente
-          console.log('Erro de permissão ao acessar dados do paciente:', invite.patientId);
-          pacientes.push({
-            id: invite.patientId,
-            name: 'Paciente (sem permissão de acesso)',
-            email: 'N/A',
-            linkedAt: invite.acceptedAt || invite.updatedAt || invite.createdAt || new Date()
-          });
-        } else {
-          pacientes.push({
-            id: invite.patientId,
-            name: 'Paciente (erro ao carregar)',
-            email: 'N/A',
-            linkedAt: invite.acceptedAt || invite.updatedAt || invite.createdAt || new Date()
-          });
-        }
-      }
-    }
-    
-    linkedPatients.value = pacientes;
-    console.log('Pacientes vinculados carregados:', pacientes);
+    const patients = await getLinkedPatients(therapistId);
+    linkedPatients.value = patients.map(patient => ({
+      ...patient,
+      linkedAt: patient.linkedAt || new Date()
+    }));
+    console.log('Pacientes vinculados carregados:', linkedPatients.value);
   } catch (error) {
     console.error('Error loading linked patients:', error);
-    // Se não conseguir carregar os pacientes, manter a lista vazia
   }
 };
 
