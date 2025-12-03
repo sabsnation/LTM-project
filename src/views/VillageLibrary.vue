@@ -445,6 +445,8 @@ const carregarEscritasBiblioteca = async () => {
       throw new Error('Usuário não autenticado');
     }
     const escritas = await getUserLibraryWritings(perfilUsuario.id);
+    // Inverte a ordem para que a mais antiga apareça primeiro (fila)
+    escritas.reverse();
     escritasBiblioteca.value = escritas;
   } catch (error) {
     console.error('Erro ao carregar escritas da biblioteca:', error);
