@@ -27,17 +27,18 @@
             <p class="text-amber-800 mb-4">Especialista em Saúde Mental</p>
             
             <div class="flex flex-wrap gap-4 justify-center md:justify-start">
-              <div class="bg-amber-900 text-amber-100 px-4 py-2 rounded-sm">
-                <p class="font-bold">120</p>
+              <div class="bg-amber-900 text-amber-100 px-4 py-2 rounded-sm text-center">
+                <p class="font-bold text-lg">{{ linkedPatientsCount }}</p>
                 <p class="text-sm">Pacientes</p>
               </div>
-              <div class="bg-amber-900 text-amber-100 px-4 py-2 rounded-sm">
-                <p class="font-bold">5+</p>
+              <div class="bg-amber-900 text-amber-100 px-4 py-2 rounded-sm text-center">
+                <input 
+                  type="number"
+                  min="0"
+                  v-model="yearsOfExperience" 
+                  class="font-bold text-lg bg-transparent text-amber-100 w-20 text-center outline-none border-b-2 border-amber-400 focus:border-amber-200 transition-colors"
+                />
                 <p class="text-sm">Anos de Experiência</p>
-              </div>
-              <div class="bg-amber-900 text-amber-100 px-4 py-2 rounded-sm">
-                <p class="font-bold">98%</p>
-                <p class="text-sm">Satisfação</p>
               </div>
             </div>
           </div>
@@ -51,22 +52,22 @@
           <div class="space-y-4">
             <div>
               <label class="block text-amber-800 font-semibold mb-1">Nome Completo</label>
-              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">Nome Completo do Psicólogo</p>
+              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">{{ userName }}</p>
             </div>
             
             <div>
               <label class="block text-amber-800 font-semibold mb-1">Registro Profissional (CRP)</label>
-              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">XX/XXXXX</p>
+              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">{{ crp }}</p>
             </div>
             
             <div>
               <label class="block text-amber-800 font-semibold mb-1">Especialidades</label>
-              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">Terapia Cognitivo-Comportamental, Terapia de Casal</p>
+              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">{{ specialties.join(', ') || 'Não informado' }}</p>
             </div>
             
             <div>
               <label class="block text-amber-800 font-semibold mb-1">Formação Acadêmica</label>
-              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">Psicologia - Universidade X, Especialização em Y</p>
+              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">{{ education }}</p>
             </div>
           </div>
         </div>
@@ -82,7 +83,7 @@
             
             <div>
               <label class="block text-amber-800 font-semibold mb-1">Telefone</label>
-              <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">{{ phoneNumber }}</p>
+               <p class="bg-amber-50 border border-amber-300 rounded-sm px-4 py-2">{{ phoneNumber }}</p>
             </div>
             
             <div>
@@ -96,7 +97,10 @@
             </div>
           </div>
           
-          <button class="mt-6 w-full bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100 py-3 rounded-sm font-semibold hover:from-amber-500 hover:to-amber-700 transition-all border border-amber-500">
+          <button 
+            @click="handleSaveProfile"
+            class="mt-6 w-full bg-gradient-to-r from-amber-600 to-amber-800 text-amber-100 py-3 rounded-sm font-semibold hover:from-amber-500 hover:to-amber-700 transition-all border border-amber-500"
+          >
             Salvar Alterações
           </button>
         </div>
@@ -107,18 +111,22 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getCurrentUserProfile } from '@/firebase/userProfileService';
-import { getTherapistById } from '@/firebase/firestoreService';
+import { getLinkedPatients } from '@/firebase/userProfileService';
+import { getTherapistById, updateTherapist } from '@/firebase/firestoreService';
 import { getCurrentUser } from '@/firebase/authService';
 
-// Variáveis reativas para armazenar as informações do psicólogo
+// Variáveis reativas
 const userName = ref('Carregando...');
-const crp = ref('');
+const crp = ref('Não informado');
 const specialties = ref([]);
-const education = ref('');
+const education = ref('Não informado');
 const userEmail = ref('');
 const phoneNumber = ref('(00) 00000-0000');
 const biography = ref('');
+const linkedPatientsCount = ref(0);
+const yearsOfExperience = ref(0);
+
+let userId = null;
 
 // Carregar as informações do perfil ao montar o componente
 onMounted(async () => {
@@ -128,32 +136,58 @@ onMounted(async () => {
       console.error('Nenhum usuário autenticado');
       return;
     }
+    userId = user.uid; // Armazena o ID do usuário
 
     // Armazenar o email do usuário
     userEmail.value = user.email || 'Email não fornecido';
 
-    // Carregar o perfil básico do usuário
-    const userProfile = await getCurrentUserProfile();
-    if (userProfile) {
-      userName.value = userProfile.name || user.email.split('@')[0];
-      phoneNumber.value = userProfile.phoneNumber || '(00) 00000-0000';
-      biography.value = userProfile.biography || 'Escreva sobre sua prática e experiência...';
-    }
-
-    // Carregar informações específicas do psicólogo
-    const therapistProfile = await getTherapistById(user.uid);
+    // Carregar informações específicas do psicólogo do documento 'therapists'
+    const therapistProfile = await getTherapistById(userId);
     if (therapistProfile) {
-      // Atualizar CRP se estiver disponível no perfil do terapeuta
-      if (therapistProfile.crp) {
-        crp.value = therapistProfile.crp;
-      }
-      // Pode adicionar especializações e formação acadêmica futuramente
+      userName.value = therapistProfile.name || user.email.split('@')[0];
+      crp.value = therapistProfile.crp || 'Não informado';
       specialties.value = therapistProfile.specialties || [];
       education.value = therapistProfile.education || 'Informação não fornecida';
+      biography.value = therapistProfile.biography || 'Escreva sobre sua prática e experiência...';
+      yearsOfExperience.value = therapistProfile.yearsOfExperience || 0;
+      // O número de telefone pode vir do perfil do terapeuta também
+      phoneNumber.value = therapistProfile.phoneNumber || '(00) 00000-0000';
     }
+
+    // Carregar a contagem de pacientes vinculados
+    const patients = await getLinkedPatients(userId);
+    linkedPatientsCount.value = patients.length;
+
   } catch (error) {
     console.error('Erro ao carregar perfil do psicólogo:', error);
     userName.value = 'Erro ao carregar';
   }
 });
+
+// Função para salvar o perfil
+const handleSaveProfile = async () => {
+  if (!userId) {
+    alert('Erro: ID do usuário não encontrado.');
+    return;
+  }
+  
+  const exp = Number(yearsOfExperience.value);
+  if (exp < 0) {
+    alert('Os anos de experiência não podem ser um número negativo.');
+    yearsOfExperience.value = 0; // Reseta para 0
+    return;
+  }
+
+  try {
+    const dataToUpdate = {
+      biography: biography.value,
+      yearsOfExperience: exp,
+    };
+    await updateTherapist(userId, dataToUpdate);
+    alert('Perfil salvo com sucesso!');
+  } catch (error) {
+    console.error('Erro ao salvar o perfil:', error);
+    alert('Ocorreu um erro ao salvar o perfil.');
+  }
+};
 </script>
