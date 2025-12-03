@@ -17,6 +17,7 @@ import VillageLibrary from '@/views/VillageLibrary.vue'
 import FirebaseTest from '@/views/FirebaseTest.vue'
 import SolicitarCadastro from '@/views/SolicitarCadastro.vue'
 import PatientMoodDetail from '@/views/PatientMoodDetail.vue'
+import TherapistLetters from '@/views/TherapistLetters.vue'
 
 
 const routes = [
@@ -99,6 +100,12 @@ const routes = [
     path: '/psychologist/patient/:id',
     name: 'patient-mood-detail',
     component: PatientMoodDetail,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/psychologist/letters',
+    name: 'psychologist-letters',
+    component: TherapistLetters,
     meta: { requiresAuth: true }
   },
   {

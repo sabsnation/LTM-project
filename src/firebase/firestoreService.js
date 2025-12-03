@@ -207,6 +207,36 @@ const getUserLetters = async (userId) => {
   }
 }
 
+const getUnreadLetters = async (therapistId) => {
+  try {
+    const q = query(
+      collection(db, lettersCollection),
+      where('therapistId', '==', therapistId),
+      where('isReadByTherapist', '==', false)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Erro ao buscar cartas não lidas:', error);
+    throw error;
+  }
+};
+
+const getSharedLetters = async (therapistId) => {
+  try {
+    const q = query(
+      collection(db, lettersCollection),
+      where('therapistId', '==', therapistId),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Erro ao buscar cartas compartilhadas:', error);
+    throw error;
+  }
+};
+
 // Library writings operations
 const createLibraryWriting = async (writingData) => {
   try {
@@ -345,6 +375,8 @@ export {
   getLetterById,
   updateLetter,
   getUserLetters,
+  getUnreadLetters,
+  getSharedLetters,
   
   // Library writings operations
   createLibraryWriting,

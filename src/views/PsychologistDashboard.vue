@@ -1,3 +1,280 @@
+<script setup>
+import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { LogOut } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
+import { logoutUser, getCurrentUser } from '@/firebase/authService';
+import { getCurrentUserProfile, getLinkedPatients } from '@/firebase/userProfileService';
+import { getTherapistById, getUnreadLetters } from '@/firebase/firestoreService';
+
+// Estados para controlar o modo escuro e transições
+const isDarkMode = ref(false);
+const showSol = ref(true);
+const showLua = ref(false);
+const shouldAnimateSol = ref(false);
+const shouldAnimateLua = ref(false);
+
+// CORREÇÃO: Importar as imagens corretamente
+import livroFechadoImg from '@/assets/livro-.png';
+import livroAbertoRealImg from '@/assets/livroaberto.png';
+import papelFundoCima from '@/assets/papel-fundo-cima.png';
+import correioImg from '@/assets/correio.png';
+
+const router = useRouter();
+const userName = ref("Carregando...");
+const livroAberto = ref(false);
+const codeVinculo = ref('CARREGANDO...');
+const pendingInvitations = ref([]);
+const linkedPatients = ref([]);
+const paginaAtual = ref(0);
+const numPaginas = ref(2); // Página 0: Convites pendentes, Página 1: Pacientes vinculados
+const unreadCount = ref(0);
+let authUnsubscribe = null;
+
+// Função para alternar entre sol e lua (modo claro/escuro) com animação
+const toggleDarkMode = () => {
+  if (!isDarkMode.value) {
+    // Ativando modo escuro: sol desce, lua aparece do topo
+    shouldAnimateSol.value = true;
+    setTimeout(() => {
+      showSol.value = false;
+      showLua.value = true;
+      shouldAnimateLua.value = true;
+    }, 10); // Pequeno delay para garantir que a animação comece
+  } else {
+    // Desativando modo escuro: lua desce, sol aparece do topo
+    shouldAnimateLua.value = true;
+    setTimeout(() => {
+      showLua.value = false;
+      showSol.value = true;
+      shouldAnimateSol.value = true;
+    }, 10); // Pequeno delay para garantir que a animação comece
+  }
+  
+  // Alternar o modo
+  isDarkMode.value = !isDarkMode.value;
+};
+
+// Funções para lidar com o fim das animações
+const onSolAnimationEnd = () => {
+  shouldAnimateSol.value = false;
+};
+
+const onLuaAnimationEnd = () => {
+  shouldAnimateLua.value = false;
+};
+
+onMounted(async () => {
+  // Load psychologist profile
+  try {
+    const profile = await getCurrentUserProfile();
+    if (profile) {
+      userName.value = profile.name || profile.email.split('@')[0];
+    } else {
+      // If no profile, redirect to login
+      router.push('/login-psicologo');
+      return;
+    }
+    
+    // Carregar o código de vínculo e outras informações do psicólogo
+    const user = await getCurrentUser();
+    if (user) {
+      const therapistProfile = await getTherapistById(user.uid);
+      if (therapistProfile) {
+        codeVinculo.value = therapistProfile.code_vinculo || 'CÓDIGO NÃO ENCONTRADO';
+      } else {
+        codeVinculo.value = 'PERFIL NÃO ENCONTRADO';
+      }
+      
+      // Carregar convites pendentes
+      await loadPendingInvitations(user.uid);
+      // Carregar pacientes vinculados
+      await loadLinkedPatients(user.uid);
+      // Carregar contagem de cartas não lidas
+      const unreadLetters = await getUnreadLetters(user.uid);
+      unreadCount.value = unreadLetters.length;
+    }
+  } catch (error) {
+    console.error('Error loading profile:', error);
+    router.push('/login-psicologo');
+  }
+});
+
+// Função para carregar convites pendentes
+const loadPendingInvitations = async (therapistId) => {
+  try {
+    // Usando a abordagem sem ordenação para evitar erro de índice
+    const { collection, getDocs, query, where } = await import('firebase/firestore');
+    const { db } = await import('@/firebase/init');
+    
+    // Query para encontrar todos os convites do terapeuta
+    const q = query(
+      collection(db, 'invitations'),
+      where('therapistId', '==', therapistId)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const allInvitations = [];
+    
+    for (const docSnap of querySnapshot.docs) {
+      allInvitations.push({ id: docSnap.id, ...docSnap.data() });
+    }
+    
+    // Filtrar apenas os convites pendentes
+    pendingInvitations.value = allInvitations.filter(inv => inv.status === 'pending');
+  } catch (error) {
+    console.error('Error loading pending invitations:', error);
+  }
+};
+
+// Função para carregar pacientes vinculados
+const loadLinkedPatients = async (therapistId) => {
+  try {
+    const patients = await getLinkedPatients(therapistId);
+    linkedPatients.value = patients.map(patient => ({
+      ...patient,
+      linkedAt: patient.linkedAt || new Date()
+    }));
+    console.log('Pacientes vinculados carregados:', linkedPatients.value);
+  } catch (error) {
+    console.error('Error loading linked patients:', error);
+  }
+};
+
+onUnmounted(() => {
+  if (authUnsubscribe) {
+    authUnsubscribe();
+  }
+});
+
+// Função para obter apenas o primeiro nome
+const getFirstName = () => {
+  if (!userName.value || userName.value === "Carregando...") {
+    return "amigo";
+  }
+  
+  // Separar o nome e pegar apenas o primeiro
+  const firstName = userName.value.split(' ')[0];
+  return firstName;
+};
+
+// Função para copiar o código de vínculo
+const copiarCodigoVinculo = async () => {
+  try {
+    await navigator.clipboard.writeText(codeVinculo.value);
+    alert('Código de vínculo copiado para a área de transferência!');
+  } catch (err) {
+    console.error('Erro ao copiar código: ', err);
+    alert('Erro ao copiar código. Por favor, selecione manualmente e copie.');
+  }
+};
+
+//Função para aceitar um convite
+const aceitarConvite = async (invitationId) => {
+  try {
+    // Primeiro, obter detalhes do convite para saber qual paciente está sendo vinculado
+    const { getInvitationById, updateInvitationStatus } = await import('@/firebase/invitationService');
+    const invitation = await getInvitationById(invitationId);
+    
+    if (!invitation || invitation.status !== 'pending') {
+        throw new Error('Convite inválido ou já processado');
+    }
+    
+    // Atualizar o status do convite para aceito
+    await updateInvitationStatus(invitationId, 'accepted', {
+      acceptedAt: serverTimestamp()
+    });
+    
+    // Agora atualizar o perfil do paciente para vinculá-lo ao terapeuta
+    // Isso deve ser feito via uma função que pode atualizar o perfil de outro usuário
+    const { doc, updateDoc } = await import('firebase/firestore');
+    const { db } = await import('@/firebase/init');
+    
+    const patientDocRef = doc(db, 'users', invitation.patientId);
+    await updateDoc(patientDocRef, {
+      therapist_linked_id: invitation.therapistId,
+      role: 'patient'  // Update role to patient when linked to therapist
+    });
+    
+    alert('Convite aceito com sucesso! Paciente vinculado.');
+    // Recarregar os convites pendentes e pacientes vinculados
+    const user = await getCurrentUser();
+    if (user) {
+      await loadPendingInvitations(user.uid);
+      // Aguardar um breve momento para garantir que o Firestore atualize o campo therapist_linked_id
+      setTimeout(() => {
+        loadLinkedPatients(user.uid);
+      }, 1000); // Aguarda 1 segundo antes de recarregar os pacientes vinculados
+    }
+  } catch (error) {
+    console.error('Erro ao aceitar convite:', error);
+    alert('Erro ao aceitar convite: ' + error.message);
+  }
+};
+
+//Função para recusar um convite
+const recusarConvite = async (invitationId) => {
+  try {
+    const { declineInvitation } = await import('@/firebase/invitationService');
+    await declineInvitation(invitationId);
+    alert('Convite recusado com sucesso!');
+    // Recarregar os convites pendentes
+    const user = await getCurrentUser();
+    if (user) {
+      await loadPendingInvitations(user.uid);
+    }
+  } catch (error) {
+    console.error('Erro ao recusar convite:', error);
+    alert('Erro ao recusar convite: ' + error.message);
+  }
+};
+
+//Função para formatar datas
+const formatDate = (date) => {
+  if (!date) return 'N/A';
+  if (date instanceof Date) {
+    return date.toLocaleDateString('pt-BR');
+  }
+  if (typeof date === 'string') {
+    return new Date(date).toLocaleDateString('pt-BR');
+  }
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate().toLocaleDateString('pt-BR');
+  }
+  return 'N/A';
+};
+
+//Funções de navegação das páginas do livro
+const paginaAnterior = () => {
+  if (paginaAtual.value > 0) {
+    paginaAtual.value--;
+  }
+};
+
+const proximaPagina = () => {
+  if (paginaAtual.value < numPaginas.value - 1) {
+    paginaAtual.value++;
+  }
+};
+
+const toggleLivro = () => {
+  livroAberto.value = !livroAberto.value;
+  // Resetar para a primeira página quando o livro é aberto
+  if (livroAberto.value) {
+    paginaAtual.value = 0;
+  }
+};
+
+const handleLogout = async () => {
+  try {
+    console.log('Realizando logout do psicólogo...');
+    await logoutUser();
+    console.log('Logout do psicólogo realizado com sucesso');
+    router.push('/');
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+};
+</script>
 <template>
   <div 
     :class="isDarkMode ? 'relative w-full h-screen overflow-hidden text-white dark-mode-background' : 'relative w-full h-screen overflow-hidden text-white fundo-personalizado'"
@@ -64,6 +341,23 @@
       <LogOut class="w-5 h-5" />
     </button>
     
+    <!-- Ícone de Correio/Notificações -->
+    <router-link 
+      to="/psychologist/letters"
+      class="absolute top-6 right-6 p-2 z-20"
+      title="Cartas Recebidas"
+    >
+      <div class="relative">
+        <img :src="correioImg" alt="Correio" class="w-16 h-16 hover:scale-110 transition-transform" />
+        <span 
+          v-if="unreadCount > 0"
+          class="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-white"
+        >
+          {{ unreadCount }}
+        </span>
+      </div>
+    </router-link>
+
     <!-- Nome do psicólogo e mensagem de boas-vindas -->
     <header class="absolute top-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 z-20">
       <h2 class="text-3xl font-bold drop-shadow-lg">{{ userName }}</h2>
@@ -282,280 +576,6 @@
     />
   </div>
 </template>
-
-<script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
-import { LogOut } from 'lucide-vue-next';
-import { useRouter } from 'vue-router';
-import { logoutUser, getCurrentUser } from '@/firebase/authService';
-import { getCurrentUserProfile, getLinkedPatients } from '@/firebase/userProfileService';
-import { getTherapistById } from '@/firebase/firestoreService';
-
-// Estados para controlar o modo escuro e transições
-const isDarkMode = ref(false);
-const showSol = ref(true);
-const showLua = ref(false);
-const shouldAnimateSol = ref(false);
-const shouldAnimateLua = ref(false);
-
-// CORREÇÃO: Importar as imagens corretamente
-import livroFechadoImg from '@/assets/livro-.png';
-import livroAbertoRealImg from '@/assets/livroaberto.png';
-import papelFundoCima from '@/assets/papel-fundo-cima.png';
-
-const router = useRouter();
-const userName = ref("Carregando...");
-const livroAberto = ref(false);
-const codeVinculo = ref('CARREGANDO...');
-const pendingInvitations = ref([]);
-const linkedPatients = ref([]);
-const paginaAtual = ref(0);
-const numPaginas = ref(2); // Página 0: Convites pendentes, Página 1: Pacientes vinculados
-let authUnsubscribe = null;
-
-// Função para alternar entre sol e lua (modo claro/escuro) com animação
-const toggleDarkMode = () => {
-  if (!isDarkMode.value) {
-    // Ativando modo escuro: sol desce, lua aparece do topo
-    shouldAnimateSol.value = true;
-    setTimeout(() => {
-      showSol.value = false;
-      showLua.value = true;
-      shouldAnimateLua.value = true;
-    }, 10); // Pequeno delay para garantir que a animação comece
-  } else {
-    // Desativando modo escuro: lua desce, sol aparece do topo
-    shouldAnimateLua.value = true;
-    setTimeout(() => {
-      showLua.value = false;
-      showSol.value = true;
-      shouldAnimateSol.value = true;
-    }, 10); // Pequeno delay para garantir que a animação comece
-  }
-  
-  // Alternar o modo
-  isDarkMode.value = !isDarkMode.value;
-};
-
-// Funções para lidar com o fim das animações
-const onSolAnimationEnd = () => {
-  shouldAnimateSol.value = false;
-};
-
-const onLuaAnimationEnd = () => {
-  shouldAnimateLua.value = false;
-};
-
-onMounted(async () => {
-  // Load psychologist profile
-  try {
-    const profile = await getCurrentUserProfile();
-    if (profile) {
-      userName.value = profile.name || profile.email.split('@')[0];
-    } else {
-      // If no profile, redirect to login
-      router.push('/login-psicologo');
-      return;
-    }
-    
-    // Carregar o código de vínculo do psicólogo
-    const user = await getCurrentUser();
-    if (user) {
-      const therapistProfile = await getTherapistById(user.uid);
-      if (therapistProfile) {
-        codeVinculo.value = therapistProfile.code_vinculo || 'CÓDIGO NÃO ENCONTRADO';
-      } else {
-        codeVinculo.value = 'PERFIL NÃO ENCONTRADO';
-      }
-      
-      // Carregar convites pendentes
-      await loadPendingInvitations(user.uid);
-      // Carregar pacientes vinculados
-      await loadLinkedPatients(user.uid);
-    }
-  } catch (error) {
-    console.error('Error loading profile:', error);
-    router.push('/login-psicologo');
-  }
-});
-
-// Função para carregar convites pendentes
-const loadPendingInvitations = async (therapistId) => {
-  try {
-    // Usando a abordagem sem ordenação para evitar erro de índice
-    const { collection, getDocs, query, where } = await import('firebase/firestore');
-    const { db } = await import('@/firebase/init');
-    
-    // Query para encontrar todos os convites do terapeuta
-    const q = query(
-      collection(db, 'invitations'),
-      where('therapistId', '==', therapistId)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    const allInvitations = [];
-    
-    for (const docSnap of querySnapshot.docs) {
-      allInvitations.push({ id: docSnap.id, ...docSnap.data() });
-    }
-    
-    // Filtrar apenas os convites pendentes
-    pendingInvitations.value = allInvitations.filter(inv => inv.status === 'pending');
-  } catch (error) {
-    console.error('Error loading pending invitations:', error);
-  }
-};
-
-// Função para carregar pacientes vinculados
-const loadLinkedPatients = async (therapistId) => {
-  try {
-    const patients = await getLinkedPatients(therapistId);
-    linkedPatients.value = patients.map(patient => ({
-      ...patient,
-      linkedAt: patient.linkedAt || new Date()
-    }));
-    console.log('Pacientes vinculados carregados:', linkedPatients.value);
-  } catch (error) {
-    console.error('Error loading linked patients:', error);
-  }
-};
-
-onUnmounted(() => {
-  if (authUnsubscribe) {
-    authUnsubscribe();
-  }
-});
-
-// Função para obter apenas o primeiro nome
-const getFirstName = () => {
-  if (!userName.value || userName.value === "Carregando...") {
-    return "amigo";
-  }
-  
-  // Separar o nome e pegar apenas o primeiro
-  const firstName = userName.value.split(' ')[0];
-  return firstName;
-};
-
-// Função para copiar o código de vínculo
-const copiarCodigoVinculo = async () => {
-  try {
-    await navigator.clipboard.writeText(codeVinculo.value);
-    alert('Código de vínculo copiado para a área de transferência!');
-  } catch (err) {
-    console.error('Erro ao copiar código: ', err);
-    alert('Erro ao copiar código. Por favor, selecione manualmente e copie.');
-  }
-};
-
-//Função para aceitar um convite
-const aceitarConvite = async (invitationId) => {
-  try {
-    // Primeiro, obter detalhes do convite para saber qual paciente está sendo vinculado
-    const { getInvitationById, updateInvitationStatus } = await import('@/firebase/invitationService');
-    const invitation = await getInvitationById(invitationId);
-    
-    if (!invitation || invitation.status !== 'pending') {
-        throw new Error('Convite inválido ou já processado');
-    }
-    
-    // Atualizar o status do convite para aceito
-    await updateInvitationStatus(invitationId, 'accepted', {
-      acceptedAt: serverTimestamp()
-    });
-    
-    // Agora atualizar o perfil do paciente para vinculá-lo ao terapeuta
-    // Isso deve ser feito via uma função que pode atualizar o perfil de outro usuário
-    const { doc, updateDoc } = await import('firebase/firestore');
-    const { db } = await import('@/firebase/init');
-    
-    const patientDocRef = doc(db, 'users', invitation.patientId);
-    await updateDoc(patientDocRef, {
-      therapist_linked_id: invitation.therapistId,
-      role: 'patient'  // Update role to patient when linked to therapist
-    });
-    
-    alert('Convite aceito com sucesso! Paciente vinculado.');
-    // Recarregar os convites pendentes e pacientes vinculados
-    const user = await getCurrentUser();
-    if (user) {
-      await loadPendingInvitations(user.uid);
-      // Aguardar um breve momento para garantir que o Firestore atualize o campo therapist_linked_id
-      setTimeout(() => {
-        loadLinkedPatients(user.uid);
-      }, 1000); // Aguarda 1 segundo antes de recarregar os pacientes vinculados
-    }
-  } catch (error) {
-    console.error('Erro ao aceitar convite:', error);
-    alert('Erro ao aceitar convite: ' + error.message);
-  }
-};
-
-//Função para recusar um convite
-const recusarConvite = async (invitationId) => {
-  try {
-    const { declineInvitation } = await import('@/firebase/invitationService');
-    await declineInvitation(invitationId);
-    alert('Convite recusado com sucesso!');
-    // Recarregar os convites pendentes
-    const user = await getCurrentUser();
-    if (user) {
-      await loadPendingInvitations(user.uid);
-    }
-  } catch (error) {
-    console.error('Erro ao recusar convite:', error);
-    alert('Erro ao recusar convite: ' + error.message);
-  }
-};
-
-//Função para formatar datas
-const formatDate = (date) => {
-  if (!date) return 'N/A';
-  if (date instanceof Date) {
-    return date.toLocaleDateString('pt-BR');
-  }
-  if (typeof date === 'string') {
-    return new Date(date).toLocaleDateString('pt-BR');
-  }
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate().toLocaleDateString('pt-BR');
-  }
-  return 'N/A';
-};
-
-//Funções de navegação das páginas do livro
-const paginaAnterior = () => {
-  if (paginaAtual.value > 0) {
-    paginaAtual.value--;
-  }
-};
-
-const proximaPagina = () => {
-  if (paginaAtual.value < numPaginas.value - 1) {
-    paginaAtual.value++;
-  }
-};
-
-const toggleLivro = () => {
-  livroAberto.value = !livroAberto.value;
-  // Resetar para a primeira página quando o livro é aberto
-  if (livroAberto.value) {
-    paginaAtual.value = 0;
-  }
-};
-
-const handleLogout = async () => {
-  try {
-    console.log('Realizando logout do psicólogo...');
-    await logoutUser();
-    console.log('Logout do psicólogo realizado com sucesso');
-    router.push('/');
-  } catch (error) {
-    console.error('Logout error:', error);
-  }
-};
-</script>
-
 <style scoped>
 /* 🔔 Animação do sino */
 @keyframes bell-swing {

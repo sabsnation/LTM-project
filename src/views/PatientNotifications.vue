@@ -107,23 +107,19 @@ const checkUnlockedLetters = async () => {
     const letters = await getUserLetters(user.uid);
     const today = new Date();
     
-    // Filter letters that are ready to be opened (either no openDate or openDate in the past)
+    // Filter letters that are ready to be opened
     const unlockedLetters = letters.filter(letter => {
-      if (!letter.openDate) return true; // No open date means it's immediately available
-      
-      // Compare dates only (ignore time)
-      const letterDate = new Date(letter.openDate);
-      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const letterDateOnly = new Date(letterDate.getFullYear(), letterDate.getMonth(), letterDate.getDate());
-      
-      return letterDateOnly <= todayDate;
+      if (!letter.openDate) return true;
+      const letterDate = letter.openDate.toDate ? letter.openDate.toDate() : new Date(letter.openDate);
+      return letterDate <= today;
     });
     
     return unlockedLetters.map(letter => ({
       type: 'letter',
       title: `Carta Desbloqueada: ${letter.title}`,
       message: `Sua carta "${letter.title}" está pronta para ser lida!`,
-      date: formatDate(letter.createdAt),
+      date: formatDate(letter.openDate),
+      notificationDate: letter.openDate.toDate ? letter.openDate.toDate() : new Date(letter.openDate),
       letterId: letter.id
     }));
   } catch (error) {
@@ -138,16 +134,15 @@ const checkPsychologistInvites = async () => {
     const user = await getCurrentUser();
     if (!user) return [];
 
-    // Get all pending invitations for this patient
     const invitations = await getInvitationsByPatientId(user.uid);
     const pendingInvites = invitations.filter(inv => inv.status === 'pending');
 
-    // Create notifications for each pending invitation
     return pendingInvites.map(invite => ({
       type: 'psychologist_invite',
       title: 'Convite para Vincular-se a um Psicólogo',
       message: `Você recebeu um convite para se vincular ao psicólogo: ${invite.therapistName || 'Psicólogo'}`,
       date: formatDate(invite.createdAt),
+      notificationDate: invite.createdAt.toDate ? invite.createdAt.toDate() : new Date(invite.createdAt),
       inviteId: invite.id
     }));
   } catch (error) {
@@ -159,14 +154,17 @@ const checkPsychologistInvites = async () => {
 // Format date for display
 const formatDate = (date) => {
   if (!date) return 'N/A';
+  // Check if it's a Firebase Timestamp
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate().toLocaleDateString('pt-BR');
+  }
+  // Check if it's a Date object
   if (date instanceof Date) {
     return date.toLocaleDateString('pt-BR');
   }
+  // Check if it's a string
   if (typeof date === 'string') {
     return new Date(date).toLocaleDateString('pt-BR');
-  }
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate().toLocaleDateString('pt-BR');
   }
   return 'N/A';
 };
@@ -174,7 +172,6 @@ const formatDate = (date) => {
 // Function to open a letter
 const openLetter = (letterId) => {
   console.log(`Opening letter with ID: ${letterId}`);
-  // Navigate to the letter viewing page
   router.push(`/patient/letters/${letterId}`);
 };
 
@@ -186,11 +183,9 @@ const acceptPsychologistInvite = async (inviteId) => {
       throw new Error('Usuário não autenticado');
     }
 
-    // Accept the invitation, which will link the patient to the therapist
     await acceptInvitation(inviteId, user.uid);
     alert('Convite aceito com sucesso! Você agora está vinculado ao psicólogo.');
 
-    // Refresh the notifications
     await loadNotifications();
   } catch (error) {
     console.error('Error accepting psychologist invite:', error);
@@ -204,7 +199,6 @@ const declinePsychologistInvite = async (inviteId) => {
     await declineInvitation(inviteId);
     alert('Convite recusado com sucesso.');
 
-    // Refresh the notifications
     await loadNotifications();
   } catch (error) {
     console.error('Error declining psychologist invite:', error);
@@ -217,10 +211,15 @@ const loadNotifications = async () => {
   const unlockedLetters = await checkUnlockedLetters();
   const psychologistInvites = await checkPsychologistInvites();
   
-  notifications.value = [
+  const allNotifications = [
     ...unlockedLetters,
     ...psychologistInvites
   ];
+
+  // Sort notifications by notificationDate in descending order (newest first)
+  allNotifications.sort((a, b) => b.notificationDate - a.notificationDate);
+  
+  notifications.value = allNotifications;
 };
 
 // Load notifications on component mount

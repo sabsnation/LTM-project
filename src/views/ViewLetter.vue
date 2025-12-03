@@ -3,12 +3,12 @@
     <div class="max-w-4xl mx-auto">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-amber-900">Visualizar Escritura</h1>
-        <router-link 
-          to="/patient/letters" 
+        <button 
+          @click="goBack"
           class="bg-amber-700 text-amber-100 px-4 py-2 rounded-sm hover:bg-amber-600 transition-colors border border-amber-500"
         >
           Voltar
-        </router-link>
+        </button>
       </div>
 
       <!-- Loader enquanto carrega a carta -->
@@ -48,7 +48,22 @@
           {{ letter.content }}
         </div>
 
-        <div class="mt-6 flex justify-end gap-4">
+        <div v-if="isAuthor" class="mt-6 flex justify-end gap-4">
+          <button
+            v-if="userProfile && userProfile.therapist_linked_id && !isShared"
+            @click="handleShareLetter"
+            :disabled="sharing"
+            class="px-4 py-2 bg-green-600 text-white rounded-sm hover:bg-green-700 transition-colors border border-green-500 disabled:bg-gray-400"
+          >
+            {{ sharing ? 'Enviando...' : 'Enviar para o Sábio Conselheiro' }}
+          </button>
+          <button
+            v-if="isShared"
+            disabled
+            class="px-4 py-2 bg-gray-500 text-white rounded-sm cursor-not-allowed"
+          >
+            Enviada
+          </button>
           <button
             @click="editLetter"
             class="px-4 py-2 bg-amber-600 text-white rounded-sm hover:bg-amber-700 transition-colors border border-amber-500"
@@ -71,7 +86,9 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getCurrentUser } from '@/firebase/authService';
-import { getLetterById, deleteDocument } from '@/firebase/firestoreService';
+import { getLetterById, updateLetter, deleteDocument } from '@/firebase/firestoreService';
+import { getCurrentUserProfile } from '@/firebase/userProfileService';
+
 
 // Importar as imagens necessárias
 import sinoIcon from '@/assets/sino-removebg-preview.png';
@@ -91,6 +108,10 @@ const router = useRouter();
 const letter = ref(null);
 const loading = ref(true);
 const error = ref(null);
+const userProfile = ref(null);
+const isShared = ref(false);
+const sharing = ref(false);
+const isAuthor = ref(false);
 
 // Função para formatar data
 const formatDate = (date) => {
@@ -183,17 +204,57 @@ const loadLetter = async (letterId) => {
       throw new Error('Carta não encontrada');
     }
     
-    // Verificar se a carta pertence ao usuário atual
-    if (foundLetter.author_id !== user.uid) {
+    // Verificar permissão: o usuário deve ser o autor OU o terapeuta destinatário
+    if (foundLetter.author_id !== user.uid && foundLetter.therapistId !== user.uid) {
       throw new Error('Acesso negado: você não tem permissão para ver esta carta');
     }
 
+    // Determinar se o usuário logado é o autor
+    isAuthor.value = foundLetter.author_id === user.uid;
+
+    // Se o usuário for o terapeuta e a carta não estiver lida, marcar como lida
+    if (!isAuthor.value && foundLetter.therapistId === user.uid && !foundLetter.isReadByTherapist) {
+      updateLetter(letterId, { isReadByTherapist: true }).catch(console.error);
+      foundLetter.isReadByTherapist = true; // Atualiza o estado localmente
+    }
+    
     letter.value = foundLetter;
+    
+    if (foundLetter.therapistId) {
+      isShared.value = true;
+    }
+
+    // Carrega o perfil do usuário apenas se for o autor, para o botão de compartilhar
+    if (isAuthor.value) {
+      userProfile.value = await getCurrentUserProfile();
+    }
+
   } catch (err) {
     console.error('Erro ao carregar carta:', err);
     error.value = err.message;
   } finally {
     loading.value = false;
+  }
+};
+
+// Função para compartilhar a carta com o terapeuta
+const handleShareLetter = async () => {
+  if (!confirm('Tem certeza que deseja enviar esta escritura para seu Sábio Conselheiro? Esta ação não pode ser desfeita.')) {
+    return;
+  }
+  sharing.value = true;
+  try {
+    await updateLetter(route.params.id, {
+      therapistId: userProfile.value.therapist_linked_id,
+      isReadByTherapist: false
+    });
+    isShared.value = true;
+    alert('Escritura enviada com sucesso!');
+  } catch (err) {
+    console.error('Erro ao compartilhar carta:', err);
+    alert('Ocorreu um erro ao enviar a escritura.');
+  } finally {
+    sharing.value = false;
   }
 };
 
@@ -215,6 +276,14 @@ const deleteLetter = async () => {
   } catch (err) {
     console.error('Erro ao excluir carta:', err);
     alert('Erro ao excluir escritura: ' + err.message);
+  }
+};
+
+const goBack = () => {
+  if (isAuthor.value) {
+    router.push('/patient/letters');
+  } else {
+    router.push('/psychologist/letters');
   }
 };
 
