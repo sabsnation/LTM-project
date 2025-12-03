@@ -252,6 +252,7 @@
     
     <!-- Renderizar cada escrita em sua posição específica -->
     <div 
+      v-if="!showWelcomeMessage"
       v-for="(escrita, index) in escritasBiblioteca" 
       :key="escrita.id"
       :class="getPosicaoEscrita(index)"
