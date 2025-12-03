@@ -79,14 +79,6 @@
             </form>
 
             <div class="mt-3 text-center">
-              <p class="text-sm text-amber-900 font-serif">Não possui um selo?</p>
-              <button
-                @click="showRegister.value = true"
-                class="text-amber-800 hover:text-amber-950 font-bold text-sm mt-1 font-serif underline"
-              >
-                Crie seu selo aqui
-              </button>
-              
               <div class="mt-2">
                 <button
                   @click="loginWithGoogleSelection"
@@ -95,15 +87,23 @@
                   Continuar com Google
                 </button>
               </div>
+              
+              <p class="text-sm text-amber-900 font-serif mt-3">Não possui um selo?</p>
+              <button
+                @click="showRegister.value = true"
+                class="text-amber-800 hover:text-amber-950 font-bold text-sm mt-1 font-serif underline"
+              >
+                Crie seu selo aqui
+              </button>
             </div>
 
             <div class="mt-2 text-center border-t border-amber-800 pt-2">
-              <p class="text-sm text-amber-900 font-serif">É um sábio curador?</p>
+              <p class="text-sm text-amber-900 font-serif">Já é credenciado?</p>
               <router-link
-                to="/solicitar-cadastro"
+                to="/login-psicologo"
                 class="text-amber-800 hover:text-amber-950 font-bold text-sm mt-1 inline-block font-serif underline"
               >
-                Acesso ao pergaminho sábio
+                Acesse seu pergaminho sábio
               </router-link>
             </div>
           </div>

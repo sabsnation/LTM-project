@@ -109,6 +109,16 @@
           >
             Continuar com Google
           </button>
+
+          <div class="mt-4 text-center">
+            <p class="text-amber-200 text-sm sm:text-base">Não possui credenciamento?</p>
+            <router-link
+              to="/solicitar-cadastro"
+              class="text-amber-300 hover:text-amber-100 font-semibold text-sm sm:text-base underline"
+            >
+              Solicitar credenciamento
+            </router-link>
+          </div>
         </div>
 
 
