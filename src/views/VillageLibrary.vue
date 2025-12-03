@@ -534,11 +534,8 @@ const getPosicaoEscrita = (index) => {
   classes += `${topPosition} `;
   
   // Adicionar classe de posição horizontal com base no lado
-  if (lado === 'left') {
-    classes += `left-1/4 -translate-x-1/2 ${posicoesHorizontais[posicaoNaPrateleira]} `;
-  } else {
-    classes += `right-1/4 translate-x-1/2 ${posicoesHorizontais[posicaoNaPrateleira]} `;
-  }
+  const anchorClass = lado === 'left' ? 'left-1/4' : 'left-3/4';
+  classes += `${anchorClass} -translate-x-1/2 ${posicoesHorizontais[posicaoNaPrateleira]} `;
   
   // Adicionar rotação
   classes += rotacoes[posicaoNaPrateleira];
