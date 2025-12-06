@@ -1,0 +1,19 @@
+7.1. Visão Geral e Página de Acesso
+
+Este manual tem como objetivo orientar os usuários – principalmente **Pacientes** e **Psicólogos (Sábios Conselheiros)** – no uso das funcionalidades principais da plataforma **Letter Matter: A Cura Pela Escrita**.
+
+Todas as instruções estão acompanhadas de espaços destinados à inserção de imagens das telas do sistema.
+
+A Página de Acesso (Inicial) apresenta um ambiente acolhedor, permitindo que o usuário realize o **Login** ou **Crie seu Selo de Acesso** (Registro). Esta tela foi projetada para direcionar o usuário para a experiência adequada, seja como paciente em sua jornada de autoconhecimento ou como psicólogo em sua missão de aconselhamento.
+
+Para os **Pacientes**, a plataforma oferece a liberdade de se registrar e começar a explorar o sistema imediatamente, criando um **Selo de Acesso** pessoal.
+
+Para os **Psicólogos**, existe uma área específica para **Acesso ao Pergaminho Sábio**, destinada a profissionais já credenciados, e um link para **Solicitar Credenciamento** para novos sábios conselheiros. Futuramente, o sistema poderá ser alterado para que os registros de novos psicólogos sejam geridos por um administrador, garantindo a validação dos profissionais.
+
+**Elementos da Página de Acesso:**
+● **Nome e Slogan do Sistema:** "Letter Matter: A Cura Pela Escrita".
+● **Caixas de Texto para Login:** Campos para "Símbolo de Correio" (E-mail) e "Senha Secreta" para acesso direto.
+● **Opção de Login com Google:** Para maior conveniência, permite continuar usando uma conta Google.
+● **Botão "Crie seu Selo aqui":** Opção de registro para novos pacientes, permitindo acesso imediato às funcionalidades do sistema para teste e uso completo.
+● **Link "Acesse seu pergaminho sábio":** Para que psicólogos já credenciados possam fazer login.
+● **Link "Solicitar credenciamento":** Para que novos psicólogos possam iniciar o processo de registro.

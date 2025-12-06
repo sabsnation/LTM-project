@@ -1,0 +1,70 @@
+//// Use este código no site dbdiagram.io para visualizar o diagrama do banco de dados "Pomodash".
+//// Cole todo o conteúdo deste bloco de código no editor do dbdiagram.io.
+
+// --- Definição das Tabelas (Coleções) ---
+
+Table users {
+  id varchar [pk, unique, note: 'UID do Firebase Auth ou ID único']
+  name varchar
+  email varchar [unique, not null]
+  password_hash varchar [not null]
+  role varchar [not null, note: '"aluno", "professor", "admin_escola", "admin_global"']
+  createdAt timestamp
+}
+
+Table schools {
+  id varchar [pk, unique]
+  name varchar [not null]
+  admin_id varchar [ref: - users.id, unique, note: 'O administrador desta escola']
+  createdAt timestamp
+}
+
+Table teachers {
+  id varchar [pk, unique]
+  user_id varchar [ref: > users.id, unique, not null]
+  school_id varchar [ref: > schools.id, not null]
+  // Outros campos específicos do professor, como matéria, etc.
+}
+
+Table students {
+  id varchar [pk, unique]
+  user_id varchar [ref: > users.id, unique, not null]
+  school_id varchar [ref: > schools.id, not null]
+  // Outros campos específicos do aluno, como matrícula, etc.
+}
+
+Table classes {
+  id varchar [pk, unique]
+  name varchar [note: 'Ex: "Matemática 3A" ou "História 2024"']
+  school_id varchar [ref: > schools.id, not null]
+  teacher_id varchar [ref: > teachers.id, not null]
+  createdAt timestamp
+}
+
+// Tabela de junção para o relacionamento Muitos-para-Muitos entre Alunos e Turmas
+Table class_members {
+  id varchar [pk, unique]
+  class_id varchar [ref: > classes.id, not null]
+  student_id varchar [ref: > students.id, not null]
+  joinedAt timestamp
+}
+
+
+// --- Definição Explícita das Relações ---
+// O dbdiagram.io já infere as relações, mas esta seção pode ajudar na clareza.
+
+// Relações de Usuário
+// Um usuário pode ser um professor ou um aluno (herança/especialização)
+Ref: users.id < teachers.user_id
+Ref: users.id < students.user_id
+
+// Relações da Escola
+Ref: users.id > schools.admin_id [note: 'Um usuário (com role admin_escola) gerencia uma escola']
+Ref: schools.id < teachers.school_id [note: 'Um professor pertence a uma escola']
+Ref: schools.id < students.school_id [note: 'Um aluno pertence a uma escola']
+Ref: schools.id < classes.school_id [note: 'Uma turma pertence a uma escola']
+
+// Relações de Turma
+Ref: teachers.id < classes.teacher_id [note: 'Um professor leciona em uma ou mais turmas']
+Ref: classes.id < class_members.class_id
+Ref: students.id < class_members.student_id [note: 'Um aluno pode pertencer a várias turmas']

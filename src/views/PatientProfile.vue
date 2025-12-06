@@ -46,7 +46,8 @@
               <div class="flex items-center gap-3 p-3 bg-amber-200 rounded-lg border border-amber-300 cursor-pointer hover:bg-amber-300 transition-colors">
                 <img :src="gatoHumorImage" alt="Gatinho Sir Favo de Mel" class="w-10 h-10 rounded-full">
                 <div class="mood-message">
-                  <p class="text-amber-900 font-medium">{{ dailyMood || 'Como você está se sentindo hoje?' }}</p>
+                  <p class="text-amber-900 font-medium">Como você está se sentindo hoje?</p>
+                  <p v-if="dailyMood" class="text-amber-800 text-sm mt-1">Hoje você está: {{ dailyMood }}</p>
                 </div>
               </div>
             </div>
