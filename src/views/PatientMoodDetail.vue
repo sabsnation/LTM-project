@@ -1,28 +1,56 @@
 <template>
-  <div class="p-8 bg-gray-100 min-h-screen">
-    <div v-if="patient" class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-      <h1 class="text-3xl font-bold text-gray-800 mb-4">{{ patient.name }}</h1>
-      
-      <div class="mb-6">
-        <h2 class="text-2xl font-semibold text-gray-700 mb-2">Histórico de Humor</h2>
-        <div v-if="patient.moodHistory && patient.moodHistory.length > 0" class="space-y-4">
-          <div v-for="(moodEntry, index) in patient.moodHistory" :key="index" class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <p class="text-lg font-medium text-gray-800"><strong>Humor:</strong> {{ moodEntry.mood }}</p>
-            <p class="text-sm text-gray-500"><strong>Data:</strong> {{ formatDate(moodEntry.date) }}</p>
-            <p v-if="moodEntry.comment" class="mt-2 text-gray-600"><strong>Comentário:</strong> {{ moodEntry.comment }}</p>
+  <div class="relative w-full min-h-screen font-serif bg-gradient-to-r from-blue-900 to-amber-700">
+    <!-- Lua -->
+    <div class="absolute top-8 left-8">
+      <div class="relative">
+        <img src="@/assets/lua.png" alt="Lua" class="w-24 h-24 opacity-80" />
+        <div class="absolute inset-0 bg-blue-300 rounded-full filter blur-3xl opacity-50 animate-pulse-blue"></div>
+      </div>
+    </div>
+    
+    <!-- Sol -->
+    <div class="absolute top-8 right-8">
+      <div class="relative">
+        <img src="@/assets/sol.png" alt="Sol" class="w-24 h-24 opacity-80" />
+        <div class="absolute inset-0 bg-yellow-300 rounded-full filter blur-3xl opacity-30 animate-pulse-yellow"></div>
+      </div>
+    </div>
+    
+    <!-- Conteúdo Central -->
+    <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+      <div v-if="patient" class="max-w-4xl w-full bg-amber-50 bg-opacity-80 backdrop-blur-sm rounded-lg shadow-2xl p-6 border-2 border-amber-300">
+        <h1 class="text-4xl font-bold text-amber-900 mb-6 text-center">{{ patient.name }}</h1>
+        
+        <div class="mb-6">
+          <h2 class="text-3xl font-semibold text-amber-800 mb-4 border-b-2 border-amber-300 pb-2">Histórico de Humor</h2>
+          
+          <div v-if="patient.moodHistory && patient.moodHistory.length > 0" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+            <div 
+              v-for="moodEntry in patient.moodHistory" 
+              :key="moodEntry.date.seconds" 
+              class="p-4 bg-amber-100 rounded-lg shadow border border-amber-200"
+            >
+              <p class="text-lg font-medium text-amber-900"><strong>Humor:</strong> {{ moodEntry.mood }}</p>
+              <p class="text-sm text-amber-700"><strong>Data:</strong> {{ formatDate(moodEntry.date) }}</p>
+              <p v-if="moodEntry.comment" class="mt-2 text-amber-800 italic">"{{ moodEntry.comment }}"</p>
+            </div>
+          </div>
+
+          <div v-else class="text-center py-8">
+            <p class="text-amber-700 italic">Nenhum histórico de humor encontrado para este paciente.</p>
           </div>
         </div>
-        <div v-else>
-          <p class="text-gray-500">Nenhum histórico de humor encontrado para este paciente.</p>
+        
+        <div class="text-center">
+          <button @click="goBack" class="px-6 py-2 bg-amber-700 text-white rounded-md hover:bg-amber-800 transition-colors shadow-lg">
+            Voltar ao Painel
+          </button>
         </div>
       </div>
-      
-      <button @click="goBack" class="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors">
-        Voltar ao Painel
-      </button>
-    </div>
-    <div v-else class="text-center">
-      <p class="text-gray-500">Carregando dados do paciente...</p>
+
+      <div v-else class="text-center text-white text-xl">
+        <p>Carregando dados do paciente...</p>
+      </div>
     </div>
   </div>
 </template>
@@ -64,5 +92,33 @@ const goBack = () => {
 </script>
 
 <style scoped>
-/* Estilos adicionais se necessário */
+@keyframes pulse-blue {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-yellow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+.animate-pulse-blue {
+  animation: pulse-blue 4s ease-in-out infinite;
+}
+
+.animate-pulse-yellow {
+  animation: pulse-yellow 4s ease-in-out infinite;
+}
 </style>

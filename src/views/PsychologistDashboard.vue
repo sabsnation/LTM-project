@@ -344,18 +344,19 @@ const handleLogout = async () => {
     <!-- Ícone de Correio/Notificações -->
     <router-link 
       to="/psychologist/letters"
-      class="absolute top-6 right-6 p-2 z-20"
+      class="absolute top-6 right-6 p-2 z-20 flex flex-col items-center"
       title="Cartas Recebidas"
     >
       <div class="relative">
-        <img :src="correioImg" alt="Correio" class="w-16 h-16 hover:scale-110 transition-transform" />
+        <img :src="correioImg" alt="Correio" class="w-24 h-24 hover:scale-110 transition-transform" />
         <span 
           v-if="unreadCount > 0"
-          class="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-white"
+          class="absolute -top-2 -right-2 w-8 h-8 bg-red-600 text-white text-base font-bold rounded-full flex items-center justify-center border-2 border-white"
         >
           {{ unreadCount }}
         </span>
       </div>
+      <p class="text-center text-lg mt-2 text-white drop-shadow-lg font-bold">Correio</p>
     </router-link>
 
     <!-- Nome do psicólogo e mensagem de boas-vindas -->
@@ -635,14 +636,16 @@ const handleLogout = async () => {
 
 /* Fundo personalizado (modo claro) */
 .fundo-personalizado {
-  background-image: url('@/assets/fundo do usuario.jpg');
+  background-image: url('https://78.media.tumblr.com/90a10a126d1e3beb56566159799e553d/tumblr_ozo6zbdxOO1vbdodoo1_500.gif');
   background-size: cover;
   background-position: center;
 }
 
 /* Fundo para modo escuro */
 .dark-mode-background {
-  background: linear-gradient(135deg, #2d2d5a 0%, #1a1a2e 50%, #16213e 100%), url('@/assets/fundo do usuario.jpg') center/cover;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.95) 100%), url('https://78.media.tumblr.com/90a10a126d1e3beb56566159799e553d/tumblr_ozo6zbdxOO1vbdodoo1_500.gif');
+  background-size: cover;
+  background-position: center;
 }
 
 /* Animações para transição entre sol e lua */
